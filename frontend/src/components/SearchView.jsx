@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import styles from "./SearchView.module.css";
 
-const EXAMPLE_ADDRESS = "4809 N Ravenswood Ave 116 Chicago IL";
+const EXAMPLE_ADDRESS = "4600 Silver Hill Rd Washington DC 20233";
 
 function SearchView({
   compact = false,

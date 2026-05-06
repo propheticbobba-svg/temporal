@@ -5,5 +5,5 @@ __pycache__/
 .mypy_cache/
 *.egg-info/
 .env
-frontend/node_modules/
+node_modules/
 frontend/dist/

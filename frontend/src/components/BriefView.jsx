@@ -62,8 +62,7 @@ function buildNarrative(brief, signalCount) {
 
   return signalCount > 0
     ? "Signals are present, but no narrative summary has been generated for this location yet."
-    : brief?.business_license_coverage_note ||
-        "No signal coverage has been collected for this location yet.";
+    : "No signal coverage has been collected for this location yet.";
 }
 
 function BriefView({ brief, location }) {

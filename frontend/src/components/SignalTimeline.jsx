@@ -62,8 +62,6 @@ function SignalTimeline({ brief }) {
     ? signals
     : signals.slice(0, DEFAULT_VISIBLE_COUNT);
   const hasMore = signals.length > DEFAULT_VISIBLE_COUNT;
-  const emptyMessage =
-    brief?.business_license_coverage_note || "No signals collected for this location yet.";
 
   return (
     <section className={styles.timeline} aria-label="Signal timeline">
@@ -76,7 +74,7 @@ function SignalTimeline({ brief }) {
       </div>
 
       {signals.length === 0 ? (
-        <p className={styles.empty}>{emptyMessage}</p>
+        <p className={styles.empty}>No signals collected for this location yet.</p>
       ) : (
         <ol className={styles.list}>
           {visibleSignals.map((signal, index) => (
