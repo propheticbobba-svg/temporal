@@ -1,0 +1,8 @@
+.shell {
+  min-height: 100vh;
+  padding: 36px 44px 64px;
+}
+
+.shell[data-has-brief="true"] {
+  padding-top: 18px;
+}
