@@ -3,6 +3,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict, Field
 
 from ingestion.base import BaseIngester
+from ingestion.geocode import GeocodeIngester
 from ingestion.permits import PermitsIngester
 
 
@@ -29,6 +30,11 @@ STALENESS_BY_SOURCE: dict[str, RefreshInterval] = {
 }
 
 REGISTERED_INGESTERS: tuple[IngesterRegistration, ...] = (
+    IngesterRegistration(
+        source="geocode",
+        refresh_interval=STALENESS_BY_SOURCE["geocode"],
+        ingester=GeocodeIngester(),
+    ),
     IngesterRegistration(
         source="permits",
         refresh_interval=STALENESS_BY_SOURCE["permits"],
