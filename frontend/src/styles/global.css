@@ -1,0 +1,61 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&display=swap");
+
+:root {
+  color-scheme: dark;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono",
+    monospace;
+  --font-serif: "Libre Baskerville", Georgia, "Times New Roman", serif;
+  --bg: #080a0b;
+  --bg-elevated: #0d1113;
+  --bg-panel: #111719;
+  --bg-panel-strong: #151c1f;
+  --ink: #ebe6d7;
+  --ink-muted: #a49d8b;
+  --ink-dim: #706b5f;
+  --line: #2b3336;
+  --line-strong: #566166;
+  --red: #ff594f;
+  --amber: #d89b32;
+  --teal: #39b9ad;
+  --gray: #949b9d;
+  --green: #82a86f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  min-width: 1120px;
+  margin: 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    radial-gradient(circle at 72% 18%, rgba(57, 185, 173, 0.08), transparent 28rem),
+    var(--bg);
+  background-size: 100% 28px, auto, auto;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  text-rendering: geometricPrecision;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: rgba(216, 155, 50, 0.35);
+}

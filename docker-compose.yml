@@ -7,6 +7,11 @@ services:
       POSTGRES_PASSWORD: temporal_proj
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal_proj -d temporal_proj"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7
@@ -20,5 +25,7 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
