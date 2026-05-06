@@ -3,6 +3,7 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict, Field
 
 from ingestion.base import BaseIngester
+from ingestion.biz_licenses import BizLicensesIngester
 from ingestion.geocode import GeocodeIngester
 from ingestion.permits import PermitsIngester
 
@@ -39,6 +40,11 @@ REGISTERED_INGESTERS: tuple[IngesterRegistration, ...] = (
         source="permits",
         refresh_interval=STALENESS_BY_SOURCE["permits"],
         ingester=PermitsIngester(),
+    ),
+    IngesterRegistration(
+        source="biz_licenses",
+        refresh_interval=STALENESS_BY_SOURCE["biz_licenses"],
+        ingester=BizLicensesIngester(),
     ),
 )
 

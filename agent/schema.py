@@ -42,3 +42,5 @@ class Brief(BaseModel):
     regulatory_standing: CategoryBrief
     operational_activity: CategoryBrief
     environmental_context: CategoryBrief
+    business_license_source_count: int = Field(default=0, ge=0)
+    business_license_coverage_note: str | None = None

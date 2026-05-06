@@ -40,6 +40,7 @@ def _load_signals(session: Session, request: BriefRequest) -> list[Signal]:
         select(Signal)
         .join(Location)
         .where(Location.address == request.address)
+        .where(Signal.source != "geocode")
         .order_by(Signal.observed_at.desc())
     )
     return list(session.scalars(statement).all())
