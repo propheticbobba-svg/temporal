@@ -1,0 +1,135 @@
+[
+  {
+    "id": "chicago_business_licenses",
+    "name": "Chicago Business Licenses",
+    "api_url": "https://data.cityofchicago.org/resource/r5kz-chrr.json",
+    "cities": ["CHICAGO"],
+    "states": ["IL"],
+    "query": {
+      "strategy": "coordinate_columns",
+      "latitude_field": "latitude",
+      "longitude_field": "longitude",
+      "date_field": "license_start_date",
+      "order_field": "license_start_date",
+      "required_non_null": ["license_start_date"]
+    },
+    "fields": {
+      "license_id": "license_id",
+      "account_number": "account_number",
+      "legal_name": "legal_name",
+      "doing_business_as": "doing_business_as_name",
+      "license_type": "license_description",
+      "license_status": "license_status",
+      "license_start_date": "license_start_date",
+      "expiration_date": "expiration_date"
+    }
+  },
+  {
+    "id": "nyc_issued_licenses",
+    "name": "NYC Issued Licenses",
+    "api_url": "https://nycopendata.socrata.com/resource/w7w3-xahh.json",
+    "cities": ["NEW YORK", "BROOKLYN", "BRONX", "QUEENS", "STATEN ISLAND"],
+    "states": ["NY"],
+    "query": {
+      "strategy": "coordinate_columns",
+      "latitude_field": "latitude",
+      "longitude_field": "longitude",
+      "date_field": "license_creation_date",
+      "order_field": "license_creation_date",
+      "required_non_null": ["license_creation_date"]
+    },
+    "fields": {
+      "license_id": "license_nbr",
+      "account_number": "business_unique_id",
+      "legal_name": "business_name",
+      "doing_business_as": "dba_trade_name",
+      "license_type": "business_category",
+      "license_status": "license_status",
+      "license_start_date": "license_creation_date",
+      "expiration_date": "lic_expir_dd"
+    }
+  },
+  {
+    "id": "seattle_active_business_licenses",
+    "name": "Seattle Active Business License Tax Certificates",
+    "api_url": "https://data.seattle.gov/resource/wnbq-64tb.json",
+    "cities": ["SEATTLE"],
+    "states": ["WA"],
+    "query": {
+      "strategy": "address_fields",
+      "address_field": "street_address",
+      "city_field": "city",
+      "state_field": "state",
+      "zip_field": "zip",
+      "date_field": "license_start_date",
+      "order_field": "license_start_date",
+      "required_non_null": ["license_start_date"]
+    },
+    "fields": {
+      "license_id": "city_account_number",
+      "account_number": "city_account_number",
+      "legal_name": "business_legal_name",
+      "doing_business_as": "trade_name",
+      "license_type": "naics_description",
+      "license_start_date": "license_start_date"
+    },
+    "defaults": {
+      "license_status": "Active"
+    }
+  },
+  {
+    "id": "sf_registered_business_locations",
+    "name": "San Francisco Registered Business Locations",
+    "api_url": "https://data.sfgov.org/resource/g8m3-pdis.json",
+    "cities": ["SAN FRANCISCO"],
+    "states": ["CA"],
+    "query": {
+      "strategy": "address_fields",
+      "address_field": "full_business_address",
+      "city_field": "city",
+      "state_field": "state",
+      "date_field": "location_start_date",
+      "order_field": "location_start_date",
+      "required_non_null": ["location_start_date"]
+    },
+    "fields": {
+      "license_id": "uniqueid",
+      "account_number": "certificate_number",
+      "legal_name": "ownership_name",
+      "doing_business_as": "dba_name",
+      "license_start_date": "location_start_date",
+      "expiration_date": "location_end_date"
+    },
+    "defaults": {
+      "license_type": "Business Registration",
+      "license_status": "Active"
+    },
+    "status_from_expiration": true
+  },
+  {
+    "id": "la_active_businesses",
+    "name": "Los Angeles Listing of Active Businesses",
+    "api_url": "https://data.lacity.org/resource/6rrh-rzua.json",
+    "cities": ["LOS ANGELES"],
+    "states": ["CA"],
+    "query": {
+      "strategy": "address_fields",
+      "address_field": "street_address",
+      "city_field": "city",
+      "zip_field": "zip_code",
+      "date_field": "location_start_date",
+      "order_field": "location_start_date",
+      "required_non_null": ["location_start_date"]
+    },
+    "fields": {
+      "license_id": "location_account",
+      "account_number": "location_account",
+      "legal_name": "business_name",
+      "license_type": "primary_naics_description",
+      "license_start_date": "location_start_date"
+    },
+    "defaults": {
+      "license_status": "Active"
+    }
+  }
+]
