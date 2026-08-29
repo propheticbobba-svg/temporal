@@ -1,0 +1,28 @@
+---
+description: Authenticate to GCP with ADC; never export service account keys
+alwaysApply: true
+---
+
+# GCP authentication
+
+Project: `project-1ed4b477-d344-46ba-a89`
+
+Use Application Default Credentials. Do not export a service account JSON key.
+
+Org policy `iam.disableServiceAccountKeyCreation` is enforced on this project.
+Do not disable it. Do not run `gcloud iam service-accounts keys create`.
+Do not set `GOOGLE_APPLICATION_CREDENTIALS` to a downloaded key file.
+
+The `cli-admin` service account
+(`cli-admin@project-1ed4b477-d344-46ba-a89.iam.gserviceaccount.com`) has
+Owner, but key creation is blocked and must stay blocked.
+
+```sh
+gcloud auth login --update-adc
+gcloud config set project project-1ed4b477-d344-46ba-a89
+gcloud projects describe project-1ed4b477-d344-46ba-a89
+```
+
+If `gcloud` is missing, install it with `brew install --cask gcloud-cli`.
+SDKs pick up ADC from `~/.config/gcloud/application_default_credentials.json`.
+That file is outside the workspace and must never be committed or pasted.
