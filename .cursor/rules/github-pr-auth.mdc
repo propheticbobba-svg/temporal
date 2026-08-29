@@ -1,0 +1,24 @@
+---
+description: Use the isolated Warden GitHub bot for all git/gh auth in this repo
+alwaysApply: true
+---
+
+# GitHub bot auth
+
+Do not use the user's personal `gh` login, SSH keys, or macOS Keychain for this repo.
+
+Set this before every `gh` command and any git command that needs GitHub credentials:
+
+```sh
+export GH_CONFIG_DIR="$HOME/.config/gh-warden-bot"
+```
+
+For git fetch / push / pull that needs auth:
+
+```sh
+git -c credential.helper='!gh auth git-credential' <command>
+```
+
+The token lives only in `~/.config/gh-warden-bot` (`hosts.yml`, `config.yml`). That directory is outside the workspace and must never be copied, printed, committed, or pasted into chat.
+
+If `GH_CONFIG_DIR` is unset, `gh` is missing, or auth fails, stop and report that. Do not fall back to personal credentials or ask the user to paste a token.
