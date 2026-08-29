@@ -1,0 +1,137 @@
+.triggerWrap {
+  display: inline-block;
+  margin: 10px 0 0;
+}
+
+.trigger {
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 6px 12px;
+}
+
+.trigger:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.trigger:disabled {
+  color: var(--ink-dim);
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border: 0;
+  background: rgb(0 0 0 / 0.55);
+}
+
+.dialog {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: min(920px, 100%);
+  max-height: calc(100vh - 48px);
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--bg-elev);
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+}
+
+.title {
+  margin: 0;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.close {
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 6px 10px;
+}
+
+.close:hover {
+  background: var(--bg-hover);
+  color: var(--ink);
+}
+
+.viewport {
+  display: grid;
+  min-height: min(70vh, 520px);
+  background: var(--bg);
+}
+
+.message,
+.error {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.message {
+  color: var(--ink-muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.panorama {
+  width: 100%;
+  height: min(70vh, 520px);
+}
+
+.caveat {
+  margin: 0;
+  padding: 10px 16px 14px;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+@media (min-width: 640px) {
+  .dialogHeader {
+    padding: 16px 20px;
+  }
+
+  .caveat {
+    padding: 12px 20px 16px;
+  }
+}

@@ -12,6 +12,7 @@
     "react-dom": "^19.2.5"
   },
   "devDependencies": {
+    "@types/google.maps": "^3.66.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
