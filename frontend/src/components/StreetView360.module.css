@@ -4,20 +4,23 @@
 }
 
 .trigger {
-  border: 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   border-radius: var(--radius);
-  background: var(--bg-elev);
-  color: var(--ink);
-  font-size: 0.78rem;
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg-elev));
+  color: var(--accent);
+  font-size: 0.82rem;
   font-weight: 500;
-  padding: 6px 12px;
+  padding: 8px 14px;
 }
 
 .trigger:hover:not(:disabled) {
-  background: var(--bg-hover);
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  background: color-mix(in srgb, var(--accent) 28%, var(--bg-elev));
 }
 
 .trigger:disabled {
+  border-color: var(--line);
+  background: var(--bg-elev);
   color: var(--ink-dim);
 }
 
