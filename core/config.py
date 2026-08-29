@@ -15,6 +15,10 @@ class Settings(BaseSettings):
         default=None,
         description="Optional external permits API endpoint used by ingestion only.",
     )
+    socrata_app_token: str | None = Field(
+        default=None,
+        description="Optional Socrata app token for higher business-license rate limits.",
+    )
 
 
 @lru_cache

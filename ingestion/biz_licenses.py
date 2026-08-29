@@ -111,8 +111,7 @@ class BizLicensesIngester(BaseIngester):
             [self._legacy_source(api_url)] if api_url is not None else load_license_sources()
         )
 
-        app_token = getattr(settings, "socrata_app_token", None)
-        self.socrata_app_token = app_token if isinstance(app_token, str) and app_token else None
+        self.socrata_app_token = settings.socrata_app_token
 
     async def fetch(self, location: LocationInput) -> list[SignalCreate]:
         try:

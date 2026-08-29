@@ -1,124 +1,75 @@
-# Temporal Project
+# Temporal
 
-A data-first place intelligence platform. Given an address, the API returns a
-structured brief describing what has been happening at that location over time.
+Place intelligence. Submit an address, get a structured brief of public
+signals over time — permits, business licenses, and whatever sources you
+register next.
+
+Facts live in `signals`. Briefs are derived from those facts and stored
+until the source is stale. The request path does not refetch the world
+on every click.
+
+## Stack
+
+- Backend: Python 3.11, FastAPI, SQLAlchemy, PostgreSQL
+- Frontend: TypeScript, React, Vite
+- Ingestion: httpx against public APIs (Census, Socrata, optional permits)
 
 ## Layers
 
-- `ingestion/`: fetches external source data and writes normalized signals.
-- `agent/`: reads stored signals and produces a structured brief.
-- `api/`: validates requests, calls the agent, and returns responses.
+| Layer | Role |
+|---|---|
+| `ingestion/` | Fetch external data and write normalized signals (source of truth) |
+| `jobs/` | Ingester registry and refresh intervals |
+| `agent/` | Derive a brief from stored signals |
+| `api/` | HTTP boundary: validate, orchestrate, return JSON |
+| `frontend/` | TypeScript client |
 
-New signal sources should only add an ingester, register it in `jobs/scheduler.py`,
-and add ingestion tests.
+Add a source by writing an ingester, registering it in `jobs/scheduler.py`,
+and adding ingestion tests.
 
-## Local Development Tutorial
+## Local development
 
-This project has two local processes:
+Two processes: API + Postgres via Docker Compose, and the Vite frontend.
 
-- FastAPI backend plus Postgres and Redis through Docker Compose.
-- Vite React frontend from `frontend/`.
-
-### Prerequisites
-
-- Docker Desktop running.
-- Node.js and npm installed.
-- Python virtualenv installed if you plan to run tests or lint locally.
-
-### 1. Start the backend stack
-
-From the repository root:
+### 1. Backend
 
 ```sh
-cd /Users/kesav_bobba/Documents/temporal-proj
 make dev
 ```
 
-Leave this terminal open. It starts:
+- API: http://localhost:8000
+- Docs: http://localhost:8000/docs
+- Health: http://localhost:8000/health
 
-- API: `http://localhost:8000`
-- API docs: `http://localhost:8000/docs`
-- Postgres: `localhost:5432`
-- Redis: `localhost:6379`
-
-The API creates the local database tables on startup. Docker Compose waits for
-Postgres to be healthy before starting the API.
-
-### 2. Start the frontend
-
-Open a second terminal:
+### 2. Frontend
 
 ```sh
-cd /Users/kesav_bobba/Documents/temporal-proj
-npm install --prefix frontend
-npm --prefix frontend run dev
+make frontend
 ```
 
-Open the app:
+Open http://localhost:5173. Vite proxies `/location`, `/brief`, and `/health`
+to the API.
+
+### 3. Try an address
+
+Use a full street address with city and state:
 
 ```text
-http://localhost:5173
+4600 Silver Hill Rd Washington DC 20233
 ```
 
-The frontend uses Vite's dev proxy to forward `/location` and `/brief` to the
-backend on `http://localhost:8000`.
+Street-only inputs often fail geocoding.
 
-### 3. Try a location
-
-Use a full address with city and state:
-
-```text
-949 Abbott Lane, Allen, TX
-```
-
-Short street-only inputs such as `949 Abbott Lane` may fail because the geocoder
-does not have enough locality context to choose the correct address.
-
-### Verification Commands
-
-Check the backend directly:
-
-```sh
-curl -i -X POST http://localhost:8000/location \
-  -H 'Content-Type: application/json' \
-  -d '{"address":"949 Abbott Lane, Allen, TX"}'
-```
-
-Check the frontend proxy:
-
-```sh
-curl -i -X POST http://localhost:5173/location \
-  -H 'Content-Type: application/json' \
-  -d '{"address":"949 Abbott Lane, Allen, TX"}'
-```
-
-Run automated checks:
+## Checks
 
 ```sh
 make test
 make lint
-npm --prefix frontend run build
 ```
 
-### Troubleshooting
+## Design notes
 
-If `make dev` says it cannot connect to Docker, start Docker Desktop and run the
-command again.
-
-If `make dev` fails because port `5432` is already in use, another local
-Postgres process is running. Stop that process or change the Compose port
-mapping before starting the stack.
-
-If the frontend shows `Request failed with status 502`, the Vite dev server is
-running but the API is not reachable on `localhost:8000`. Check that the backend
-terminal is still running and that `http://localhost:8000/docs` loads.
-
-If the browser says `ERR_CONNECTION_REFUSED` for `localhost:5173`, the Vite
-frontend server is not running. Start it with:
-
-```sh
-npm --prefix frontend run dev
-```
-
-If geocoding returns `422`, try a more complete address with city, state, and
-ZIP code.
+Signals are the system of record. `source_watermarks` record the last
+successful ingest per location and source. `brief_snapshots` are
+materialized derived data, served when every source is still fresh.
+Failed fetches leave previous facts in place.

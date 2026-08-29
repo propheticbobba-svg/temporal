@@ -1,45 +1,46 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Libre+Baskerville:wght@400;700&display=swap");
-
 :root {
   color-scheme: dark;
-  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, "Liberation Mono",
-    monospace;
-  --font-serif: "Libre Baskerville", Georgia, "Times New Roman", serif;
-  --bg: #080a0b;
-  --bg-elevated: #0d1113;
-  --bg-panel: #111719;
-  --bg-panel-strong: #151c1f;
-  --ink: #ebe6d7;
-  --ink-muted: #a49d8b;
-  --ink-dim: #706b5f;
-  --line: #2b3336;
-  --line-strong: #566166;
-  --red: #ff594f;
-  --amber: #d89b32;
-  --teal: #39b9ad;
-  --gray: #949b9d;
-  --green: #82a86f;
+  --font: "Geist", var(--font-system);
+  --font-display: "Geist", var(--font-system);
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-system: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Helvetica Neue", Arial, sans-serif;
+  --bg: #0a0a0a;
+  --bg-sidebar: #0a0a0a;
+  --bg-elev: #141414;
+  --bg-hover: #1d1d1d;
+  --ink: #ececec;
+  --ink-muted: #7d8187;
+  --ink-dim: #5c5c5c;
+  --line: #1d1d1d;
+  --danger: #ff5f57;
+  --radius: 9999px;
+  --radius-panel: 20px;
+  --sidebar-width: 260px;
+  --ease: cubic-bezier(0.25, 1, 0.5, 1);
+  --duration: 0.14s;
 }
 
 * {
   box-sizing: border-box;
 }
 
-html {
+html,
+body,
+#root {
+  height: 100%;
   background: var(--bg);
 }
 
 body {
-  min-width: 1120px;
   margin: 0;
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-    radial-gradient(circle at 72% 18%, rgba(57, 185, 173, 0.08), transparent 28rem),
-    var(--bg);
-  background-size: 100% 28px, auto, auto;
   color: var(--ink);
-  font-family: var(--font-serif);
-  text-rendering: geometricPrecision;
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -50,6 +51,9 @@ input {
 button {
   color: inherit;
   cursor: pointer;
+  transition:
+    background var(--duration) var(--ease),
+    color var(--duration) var(--ease);
 }
 
 button:disabled {
@@ -57,5 +61,6 @@ button:disabled {
 }
 
 ::selection {
-  background: rgba(216, 155, 50, 0.35);
+  background: #2c2c2c;
+  color: var(--ink);
 }

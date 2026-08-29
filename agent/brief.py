@@ -24,10 +24,14 @@ SOURCE_TO_CATEGORY: dict[str, BriefCategoryName] = {
 def build_brief(session: Session, request: BriefRequest) -> Brief:
     signals = _load_signals(session, request)
     grouped = _group_signals(signals)
+    reads = [signal for category in grouped.values() for signal in category]
 
     return Brief(
         address=request.address,
         generated_at=datetime.now(tz=UTC),
+        narrative=_narrative(reads),
+        anomaly_flags=_anomaly_flags(reads),
+        signal_count=len(reads),
         physical_condition=_build_category(grouped["physical_condition"]),
         regulatory_standing=_build_category(grouped["regulatory_standing"]),
         operational_activity=_build_category(grouped["operational_activity"]),
@@ -97,3 +101,19 @@ def _score(signals: list[SignalRead]) -> float:
     if total_confidence == 0:
         return 0.0
     return round(sum(weighted_scores) / total_confidence, 2)
+
+
+def _narrative(signals: list[SignalRead]) -> str:
+    summaries = [signal.summary for signal in signals if signal.summary]
+    if summaries:
+        return " ".join(summaries[:2])
+    if signals:
+        return (
+            "Signals are present, but no narrative summary has been generated "
+            "for this location yet."
+        )
+    return "No signal coverage has been collected for this location yet."
+
+
+def _anomaly_flags(signals: list[SignalRead]) -> list[str]:
+    return [signal.summary for signal in signals if signal.is_anomaly]
