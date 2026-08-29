@@ -41,6 +41,7 @@ export interface Location {
   address: string;
   latitude: number | null;
   longitude: number | null;
+  confidence: number | null;
 }
 
 export interface ApiError {

@@ -19,6 +19,7 @@ class LocationRead(BaseModel):
     address: str = Field(min_length=1)
     latitude: float | None
     longitude: float | None
+    confidence: float | None
 
 
 def get_geocode_ingester() -> BaseIngester:
@@ -32,17 +33,18 @@ async def create_location(
     ingester: Annotated[BaseIngester, Depends(get_geocode_ingester)],
 ) -> LocationRead:
     try:
-        location = await resolve_location(session, request, ingester)
+        location, confidence = await resolve_location(session, request, ingester)
     except LocationResolutionError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    return _to_location_read(location)
+    return _to_location_read(location, confidence)
 
 
-def _to_location_read(location: Location) -> LocationRead:
+def _to_location_read(location: Location, confidence: float | None) -> LocationRead:
     return LocationRead(
         id=location.id,
         address=location.address,
         latitude=location.latitude,
         longitude=location.longitude,
+        confidence=confidence,
     )

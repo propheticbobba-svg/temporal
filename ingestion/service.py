@@ -68,7 +68,7 @@ async def resolve_location(
     session: Session,
     location_input: LocationInput,
     ingester: BaseIngester | None = None,
-) -> Location:
+) -> tuple[Location, float]:
     geocode_ingester = ingester or GeocodeIngester()
     signals = await geocode_ingester.fetch(location_input)
     if not signals:
@@ -92,7 +92,7 @@ async def resolve_location(
     _persist_signals(session, location, [geocode_signal])
     session.commit()
     session.refresh(location)
-    return location
+    return location, geocode_signal.confidence
 
 
 def _get_or_create_location(session: Session, location_input: LocationInput) -> Location:

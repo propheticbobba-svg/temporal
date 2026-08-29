@@ -4,6 +4,7 @@ import { CATEGORIES } from "../types/api";
 import AnomalyCallout from "./AnomalyCallout";
 import CategoryPanel from "./CategoryPanel";
 import SignalTimeline from "./SignalTimeline";
+import StreetView360 from "./StreetView360";
 import styles from "./BriefView.module.css";
 
 interface BriefViewProps {
@@ -23,6 +24,7 @@ export default function BriefView({ brief, location }: BriefViewProps) {
         <div>
           <h1 className={styles.address}>{brief.address || location?.address}</h1>
           <p className={styles.coordinates}>{coordinates}</p>
+          <StreetView360 location={location} />
         </div>
         <dl className={styles.meta}>
           <div>

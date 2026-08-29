@@ -24,7 +24,7 @@ class StubGeocodeIngester(BaseIngester):
         return self.signals
 
 
-def make_geocode_signal() -> SignalCreate:
+def make_geocode_signal(confidence: float = 1.0) -> SignalCreate:
     return SignalCreate(
         source="geocode",
         signal_type="baseline",
@@ -38,7 +38,7 @@ def make_geocode_signal() -> SignalCreate:
         },
         summary="The address was resolved to 123 MAIN ST, CHICAGO, IL, 60601.",
         is_anomaly=False,
-        confidence=1.0,
+        confidence=confidence,
     )
 
 
@@ -79,6 +79,27 @@ def test_post_location_returns_resolved_coordinates() -> None:
         "address": "123 MAIN ST, CHICAGO, IL, 60601",
         "latitude": 41.8781,
         "longitude": -87.6298,
+        "confidence": 1.0,
+    }
+
+
+def test_post_location_returns_non_exact_confidence() -> None:
+    client, _session_factory = build_test_client(
+        StubGeocodeIngester([make_geocode_signal(confidence=0.7)])
+    )
+    try:
+        response = client.post("/location", json={"address": "123 Main St, Chicago IL"})
+    finally:
+        client.close()
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "id": 1,
+        "address": "123 MAIN ST, CHICAGO, IL, 60601",
+        "latitude": 41.8781,
+        "longitude": -87.6298,
+        "confidence": 0.7,
     }
 
 
