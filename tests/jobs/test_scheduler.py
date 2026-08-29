@@ -1,4 +1,6 @@
-from jobs.scheduler import RefreshInterval, get_registered_ingesters
+from datetime import UTC, datetime, timedelta
+
+from jobs.scheduler import RefreshInterval, get_registered_ingesters, is_refresh_due
 
 
 def test_geocode_runs_first_and_never_refreshes() -> None:
@@ -17,3 +19,22 @@ def test_business_licenses_run_after_permits_and_refresh_weekly() -> None:
         "biz_licenses",
     ]
     assert registrations[2].refresh_interval == RefreshInterval.WEEKLY
+
+
+def test_refresh_is_due_when_never_ingested() -> None:
+    assert is_refresh_due(RefreshInterval.WEEKLY, None) is True
+
+
+def test_never_interval_is_not_due_after_first_refresh() -> None:
+    refreshed_at = datetime(2026, 1, 1, tzinfo=UTC)
+
+    assert is_refresh_due(RefreshInterval.NEVER, refreshed_at) is False
+
+
+def test_weekly_interval_is_due_after_seven_days() -> None:
+    now = datetime(2026, 1, 15, tzinfo=UTC)
+    fresh = now - timedelta(days=6)
+    stale = now - timedelta(days=7)
+
+    assert is_refresh_due(RefreshInterval.WEEKLY, fresh, now=now) is False
+    assert is_refresh_due(RefreshInterval.WEEKLY, stale, now=now) is True

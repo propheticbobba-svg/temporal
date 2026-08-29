@@ -81,7 +81,10 @@ class GeocodeIngester(BaseIngester):
         return [signal]
 
     async def _fetch_matches(self, location: LocationInput) -> list[CensusAddressMatch]:
-        async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
+        async with httpx.AsyncClient(
+            timeout=self.timeout_seconds,
+            headers={"User-Agent": "temporal-place-intelligence/0.1"},
+        ) as client:
             response = await client.get(
                 self.api_url,
                 params={

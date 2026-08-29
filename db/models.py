@@ -3,7 +3,17 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
 
-from sqlalchemy import CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
 
@@ -33,6 +43,7 @@ class Signal(Base):
             name="ck_signals_signal_type",
         ),
         CheckConstraint("confidence >= 0.0 and confidence <= 1.0", name="ck_signals_confidence"),
+        Index("ix_signals_location_source", "location_id", "source"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -50,3 +61,36 @@ class Signal(Base):
     confidence: Mapped[float] = mapped_column(Float, nullable=False)
 
     location: Mapped[Location] = relationship(back_populates="signals")
+
+
+class SourceWatermark(Base):
+    """Last successful ingest time per location and source.
+
+    Signals are the source of truth. Watermarks decide whether a source is
+    stale enough to fetch again (DDIA: derived freshness, not request-path
+    recomputation).
+    """
+
+    __tablename__ = "source_watermarks"
+    __table_args__ = (UniqueConstraint("location_id", "source", name="uq_source_watermarks"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    location_id: Mapped[int] = mapped_column(ForeignKey("locations.id"), nullable=False, index=True)
+    source: Mapped[str] = mapped_column(String(64), nullable=False)
+    refreshed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class BriefSnapshot(Base):
+    """Materialized brief for a location. Rebuilt when source facts change."""
+
+    __tablename__ = "brief_snapshots"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    location_id: Mapped[int] = mapped_column(
+        ForeignKey("locations.id"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)

@@ -38,6 +38,9 @@ class CategoryBrief(BaseModel):
 class Brief(BaseModel):
     address: str
     generated_at: datetime
+    narrative: str
+    anomaly_flags: list[str] = Field(default_factory=list)
+    signal_count: int = Field(default=0, ge=0)
     physical_condition: CategoryBrief
     regulatory_standing: CategoryBrief
     operational_activity: CategoryBrief

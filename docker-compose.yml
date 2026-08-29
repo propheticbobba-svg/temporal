@@ -13,11 +13,6 @@ services:
       timeout: 5s
       retries: 10
 
-  redis:
-    image: redis:7
-    ports:
-      - "6379:6379"
-
   api:
     build: .
     environment:
@@ -27,5 +22,3 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_started

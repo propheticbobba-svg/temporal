@@ -1,10 +1,14 @@
-from sqlalchemy import select
+import logging
+
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from db.models import Location, Signal
 from ingestion.base import BaseIngester
 from ingestion.geocode import GeocodeIngester
 from ingestion.schema import JsonObject, LocationInput, SignalCreate
+
+logger = logging.getLogger(__name__)
 
 
 class LocationResolutionError(ValueError):
@@ -25,6 +29,39 @@ async def ingest_location(
     _persist_signals(session, location, signals)
     session.commit()
     return len(signals)
+
+
+async def refresh_source(
+    session: Session,
+    location: Location,
+    location_input: LocationInput,
+    ingester: BaseIngester,
+) -> bool:
+    """Replace one source's signals after a successful fetch. Does not commit.
+
+    Fetch failures leave existing facts in place so a flaky upstream cannot
+    wipe a previously good brief.
+    """
+    try:
+        signals = await ingester.fetch(location_input)
+    except Exception:
+        logger.exception(
+            "Ingestion failed for source=%s address=%s",
+            ingester.source,
+            location.address,
+        )
+        return False
+
+    session.execute(
+        delete(Signal).where(
+            Signal.location_id == location.id,
+            Signal.source == ingester.source,
+        )
+    )
+    _apply_geocode_signal(location, signals)
+    _persist_signals(session, location, signals)
+    session.flush()
+    return True
 
 
 async def resolve_location(

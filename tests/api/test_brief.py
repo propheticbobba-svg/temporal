@@ -18,7 +18,11 @@ from ingestion.schema import LocationInput, SignalCreate
 class StubBizLicensesIngester(BaseIngester):
     source = "biz_licenses"
 
+    def __init__(self) -> None:
+        self.fetch_calls = 0
+
     async def fetch(self, location: LocationInput) -> list[SignalCreate]:
+        self.fetch_calls += 1
         return [
             SignalCreate(
                 source=self.source,
@@ -134,3 +138,34 @@ def test_post_brief_reports_uncovered_business_license_location() -> None:
     assert response.json()["business_license_coverage_note"] == (
         "No configured public license source covers this location yet."
     )
+
+
+def test_post_brief_serves_materialized_snapshot_when_sources_are_fresh() -> None:
+    stub = StubBizLicensesIngester()
+    client, session_factory = build_test_client()
+    app.dependency_overrides[get_signal_ingesters] = lambda: (stub,)
+    try:
+        with session_factory() as session:
+            session.add(
+                Location(
+                    address="123 MAIN ST, CHICAGO, IL, 60601",
+                    latitude=41.8781,
+                    longitude=-87.6298,
+                )
+            )
+            session.commit()
+
+        first = client.post("/brief", json={"address": "123 MAIN ST, CHICAGO, IL, 60601"})
+        second = client.post("/brief", json={"address": "123 MAIN ST, CHICAGO, IL, 60601"})
+    finally:
+        client.close()
+        app.dependency_overrides.clear()
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert stub.fetch_calls == 1
+    assert first.json()["signal_count"] == 1
+    assert second.json()["operational_activity"]["signals"] == first.json()["operational_activity"][
+        "signals"
+    ]
+    assert second.json()["narrative"]

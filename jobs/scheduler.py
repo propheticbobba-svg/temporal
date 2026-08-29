@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -51,3 +52,29 @@ REGISTERED_INGESTERS: tuple[IngesterRegistration, ...] = (
 
 def get_registered_ingesters() -> tuple[IngesterRegistration, ...]:
     return REGISTERED_INGESTERS
+
+
+def as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
+def is_refresh_due(
+    interval: RefreshInterval,
+    refreshed_at: datetime | None,
+    *,
+    now: datetime | None = None,
+) -> bool:
+    if refreshed_at is None:
+        return True
+    if interval is RefreshInterval.NEVER:
+        return False
+
+    current = as_utc(now or datetime.now(tz=UTC))
+    stamped = as_utc(refreshed_at)
+    if interval is RefreshInterval.WEEKLY:
+        return current - stamped >= timedelta(days=7)
+    if interval is RefreshInterval.MONTHLY:
+        return current - stamped >= timedelta(days=30)
+    return True

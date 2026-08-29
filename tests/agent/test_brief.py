@@ -37,6 +37,9 @@ def test_build_brief_returns_null_scores_for_empty_categories() -> None:
     assert brief.physical_condition.score is None
     assert brief.operational_activity.score is None
     assert brief.environmental_context.score is None
+    assert brief.signal_count == 1
+    assert brief.anomaly_flags == []
+    assert brief.narrative == "A building permit was issued with status issued."
 
 
 def test_build_brief_excludes_geocode_signals() -> None:
