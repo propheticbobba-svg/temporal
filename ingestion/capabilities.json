@@ -1,0 +1,138 @@
+[
+  {
+    "id": "occupancy",
+    "title": "Who lived here",
+    "question": "Who lived here?",
+    "trail": "People and households tied to this address over time.",
+    "place_classes": ["residential", "mixed"],
+    "edge_types": ["LIVED_AT"],
+    "uncovered_copy": "No public occupant trail is wired for this place yet. The intended chain is rental registry, then eviction dockets, then a licensed NCOA feed — not listing-site scrapes.",
+    "empty_copy": "A covering occupant source ran and found no people on record at this address.",
+    "providers": [
+      {
+        "id": "rental_registry",
+        "status": "planned",
+        "covers": { "kind": "never" }
+      }
+    ]
+  },
+  {
+    "id": "tenancy",
+    "title": "Tenure",
+    "question": "Was this rented, leased, or owned?",
+    "trail": "Owner, landlord, and tenancy marks on the parcel.",
+    "place_classes": ["residential", "commercial", "industrial", "mixed"],
+    "edge_types": ["TENANT_OF", "OWNED_BY"],
+    "uncovered_copy": "No assessor or rental-registry feed is wired for this place yet. Title and lease are county records, not listing sites.",
+    "empty_copy": "A covering tenure source ran and found no owner or lease record.",
+    "providers": [
+      {
+        "id": "county_assessor",
+        "status": "planned",
+        "covers": { "kind": "never" }
+      }
+    ]
+  },
+  {
+    "id": "house_work",
+    "title": "House work",
+    "question": "Was work done on the house?",
+    "trail": "Permits and contractors attached to the dwelling.",
+    "place_classes": ["residential", "mixed"],
+    "edge_types": ["WORKED_ON", "SERVICED"],
+    "uncovered_copy": "No permit portal is configured for this place yet. House work comes from the local building department, not from a score.",
+    "empty_copy": "A covering permit source ran and found no work on file.",
+    "providers": [
+      {
+        "id": "configured_permits_api",
+        "status": "live",
+        "covers": { "kind": "permits_configured" }
+      }
+    ]
+  },
+  {
+    "id": "household_services",
+    "title": "Household services",
+    "question": "Did they hire a gardener or other household service?",
+    "trail": "Licensed landscape, pest, and service work at the residence.",
+    "place_classes": ["residential", "mixed"],
+    "edge_types": ["SERVICED"],
+    "uncovered_copy": "No household-service feed is wired yet. A gardener would come from a contractor board or pest-control filing, not from an invented name.",
+    "empty_copy": "A covering service source ran and found no hired work at this address.",
+    "providers": [
+      {
+        "id": "state_pest_board",
+        "status": "planned",
+        "covers": { "kind": "never" }
+      }
+    ]
+  },
+  {
+    "id": "business_activity",
+    "title": "Who operated here",
+    "question": "Who operated at this site?",
+    "trail": "Licensed businesses and entities attached to the address.",
+    "place_classes": ["commercial", "industrial", "mixed"],
+    "edge_types": ["OPERATED_AT", "LICENSED"],
+    "uncovered_copy": "No license or entity feed covers this place yet. City Socrata is first; Secretary of State is the planned fallback.",
+    "empty_copy": "A covering license source ran and found no operator on file.",
+    "providers": [
+      {
+        "id": "socrata_city_licenses",
+        "status": "live",
+        "covers": { "kind": "license_registry" }
+      }
+    ]
+  },
+  {
+    "id": "inspections",
+    "title": "Inspections",
+    "question": "What inspections or violations are on file?",
+    "trail": "Health, fire, building, and workplace inspections.",
+    "place_classes": ["commercial", "industrial", "mixed"],
+    "edge_types": ["INSPECTED"],
+    "uncovered_copy": "No inspection feed is wired for this place yet.",
+    "empty_copy": "A covering inspection source ran and found no filings.",
+    "providers": [
+      {
+        "id": "local_food_inspections",
+        "status": "planned",
+        "covers": { "kind": "never" }
+      }
+    ]
+  },
+  {
+    "id": "site_work",
+    "title": "Site work",
+    "question": "What was built or altered here?",
+    "trail": "Commercial and industrial permits at the site.",
+    "place_classes": ["commercial", "industrial"],
+    "edge_types": ["WORKED_ON", "SERVICED"],
+    "uncovered_copy": "No permit portal is configured for this place yet.",
+    "empty_copy": "A covering permit source ran and found no site work on file.",
+    "providers": [
+      {
+        "id": "configured_permits_api",
+        "status": "live",
+        "covers": { "kind": "permits_configured" }
+      }
+    ]
+  },
+  {
+    "id": "industrial_activity",
+    "title": "Industrial activity",
+    "question": "What industrial work happens here?",
+    "trail": "Warehouse, freight, plant, and hazardous operations.",
+    "place_classes": ["industrial"],
+    "edge_types": ["OPERATED_AT"],
+    "uncovered_copy": "No dedicated industrial feed is wired. A warehouse license on file still counts as activity.",
+    "empty_copy": "A covering industrial source ran and found no plant or freight activity.",
+    "providers": [
+      {
+        "id": "socrata_city_licenses",
+        "status": "live",
+        "covers": { "kind": "license_registry" }
+      }
+    ]
+  }
+]

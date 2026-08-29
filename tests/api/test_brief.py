@@ -84,6 +84,10 @@ def test_post_brief_refreshes_business_license_signals() -> None:
     signals = data["operational_activity"]["signals"]
     assert len(signals) == 1
     assert signals[0]["source"] == "biz_licenses"
+    assert data["place_class"] == "commercial"
+    operators = next(module for module in data["modules"] if module["id"] == "business_activity")
+    assert operators["status"] == "answered"
+    assert data["graph"]["entities"]
 
 
 def test_post_brief_replaces_previous_business_license_signals() -> None:

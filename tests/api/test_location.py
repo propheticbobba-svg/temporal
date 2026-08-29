@@ -130,3 +130,93 @@ def test_post_location_returns_422_when_geocode_fails() -> None:
 
     assert response.status_code == 422
     assert response.json() == {"detail": "Unable to geocode address: Unknown address"}
+
+
+def test_post_location_reuses_stored_pin_when_live_geocode_fails() -> None:
+    client, session_factory = build_test_client(StubGeocodeIngester([]))
+    try:
+        with session_factory() as session:
+            session.add(
+                Location(
+                    address="501 OFARRELL ST, SAN FRANCISCO, CA, 94102",
+                    latitude=37.7857,
+                    longitude=-122.4130,
+                )
+            )
+            session.commit()
+        response = client.post(
+            "/location",
+            json={"address": "501 OFARRELL ST, SAN FRANCISCO, CA, 94102"},
+        )
+    finally:
+        client.close()
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["address"] == "501 OFARRELL ST, SAN FRANCISCO, CA, 94102"
+    assert response.json()["latitude"] == 37.7857
+
+
+def test_post_location_reuses_pin_for_verbose_same_place_address() -> None:
+    verbose = (
+        "200 South Wacker, 200, South Wacker Drive, Financial District, Loop, "
+        "Chicago, South Chicago Township, Cook County, Illinois, 60606, United States"
+    )
+    client, session_factory = build_test_client(StubGeocodeIngester([]))
+    try:
+        with session_factory() as session:
+            session.add(
+                Location(
+                    address="200 S WACKER DR, CHICAGO, IL, 60606",
+                    latitude=41.8793,
+                    longitude=-87.6370,
+                )
+            )
+            session.commit()
+        response = client.post("/location", json={"address": verbose})
+    finally:
+        client.close()
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["address"] == "200 S WACKER DR, CHICAGO, IL, 60606"
+    assert response.json()["latitude"] == 41.8793
+
+
+def test_post_location_stores_requested_address_when_match_label_is_verbose() -> None:
+    verbose = (
+        "200 South Wacker, 200, South Wacker Drive, Financial District, Loop, "
+        "Chicago, South Chicago Township, Cook County, Illinois, 60606, United States"
+    )
+    client, _session_factory = build_test_client(
+        StubGeocodeIngester(
+            [
+                SignalCreate(
+                    source="geocode",
+                    signal_type="baseline",
+                    observed_at=datetime(2026, 1, 1, tzinfo=UTC),
+                    value={
+                        "matched_address": verbose,
+                        "latitude": 41.8789,
+                        "longitude": -87.6373,
+                        "tiger_line_id": "nominatim",
+                        "side": "N",
+                    },
+                    summary="Resolved by nominatim.",
+                    is_anomaly=False,
+                    confidence=0.7,
+                )
+            ]
+        )
+    )
+    try:
+        response = client.post(
+            "/location",
+            json={"address": "200 South Wacker Drive, Chicago, IL, 60606"},
+        )
+    finally:
+        client.close()
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["address"] == "200 South Wacker Drive, Chicago, IL, 60606"

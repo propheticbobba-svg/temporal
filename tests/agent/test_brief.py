@@ -39,7 +39,19 @@ def test_build_brief_returns_null_scores_for_empty_categories() -> None:
     assert brief.environmental_context.score is None
     assert brief.signal_count == 1
     assert brief.anomaly_flags == []
-    assert brief.narrative == "A building permit was issued with status issued."
+    assert brief.place_class == "residential"
+    assert brief.place_class_assumed is True
+    assert {module.id for module in brief.modules} == {
+        "occupancy",
+        "tenancy",
+        "house_work",
+        "household_services",
+    }
+    house_work = next(module for module in brief.modules if module.id == "house_work")
+    assert house_work.status == "answered"
+    assert house_work.signals[0].source == "permits"
+    assert brief.narrative.startswith("This place reads as a residence")
+    assert "A building permit was issued with status issued." in brief.narrative
 
 
 def test_build_brief_excludes_geocode_signals() -> None:

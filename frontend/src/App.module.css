@@ -40,6 +40,34 @@
   font-weight: 500;
 }
 
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.mobileTabs {
+  display: flex;
+  gap: 2px;
+}
+
+.mobileTabs button {
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--ink-dim);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 5px 8px;
+  text-transform: capitalize;
+}
+
+.mobileTabs button[aria-selected="true"] {
+  background: var(--bg-elev);
+  color: var(--ink);
+}
+
 .scroll {
   display: flex;
   flex: 1;
@@ -93,6 +121,11 @@
   padding: 8px 20px 12px;
 }
 
+.stage[data-has-brief="true"][data-view="graph"] .scroll {
+  overflow: hidden;
+  padding: 0;
+}
+
 .stage[data-has-brief="false"] .composerSlot {
   padding-bottom: 18vh;
 }
@@ -108,6 +141,10 @@
 
   .menu[data-collapsed="true"] {
     display: inline;
+  }
+
+  .mobileTabs {
+    display: none;
   }
 
   .scroll {

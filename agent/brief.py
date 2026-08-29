@@ -3,8 +3,19 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from agent.schema import Brief, BriefCategoryName, BriefRequest, CategoryBrief, SignalRead
+from agent.graph import build_place_graph
+from agent.modules import build_modules
+from agent.place_class import PlaceClassification, classify_place
+from agent.schema import (
+    Brief,
+    BriefCategoryName,
+    BriefModule,
+    BriefRequest,
+    CategoryBrief,
+    SignalRead,
+)
 from db.models import Location, Signal
+from ingestion.schema import LocationInput
 
 CATEGORY_NAMES: tuple[BriefCategoryName, ...] = (
     "physical_condition",
@@ -22,21 +33,44 @@ SOURCE_TO_CATEGORY: dict[str, BriefCategoryName] = {
 
 
 def build_brief(session: Session, request: BriefRequest) -> Brief:
+    location = _load_location(session, request.address)
+    location_input = (
+        LocationInput(
+            address=location.address,
+            latitude=location.latitude,
+            longitude=location.longitude,
+        )
+        if location is not None
+        else LocationInput(address=request.address)
+    )
     signals = _load_signals(session, request)
     grouped = _group_signals(signals)
     reads = [signal for category in grouped.values() for signal in category]
+    classification = classify_place(request.address, reads)
+    graph = build_place_graph(request.address, classification.place_class, reads)
+    modules = build_modules(classification.place_class, reads, graph, location_input)
 
     return Brief(
         address=request.address,
         generated_at=datetime.now(tz=UTC),
-        narrative=_narrative(reads),
+        narrative=_narrative(classification, modules, reads),
         anomaly_flags=_anomaly_flags(reads),
         signal_count=len(reads),
+        place_class=classification.place_class,
+        place_class_label=classification.label,
+        place_class_assumed=classification.assumed,
+        place_class_reasons=classification.reasons,
+        modules=modules,
+        graph=graph,
         physical_condition=_build_category(grouped["physical_condition"]),
         regulatory_standing=_build_category(grouped["regulatory_standing"]),
         operational_activity=_build_category(grouped["operational_activity"]),
         environmental_context=_build_category(grouped["environmental_context"]),
     )
+
+
+def _load_location(session: Session, address: str) -> Location | None:
+    return session.scalars(select(Location).where(Location.address == address)).one_or_none()
 
 
 def _load_signals(session: Session, request: BriefRequest) -> list[Signal]:
@@ -103,16 +137,35 @@ def _score(signals: list[SignalRead]) -> float:
     return round(sum(weighted_scores) / total_confidence, 2)
 
 
-def _narrative(signals: list[SignalRead]) -> str:
-    summaries = [signal.summary for signal in signals if signal.summary]
-    if summaries:
-        return " ".join(summaries[:2])
-    if signals:
-        return (
-            "Signals are present, but no narrative summary has been generated "
-            "for this location yet."
+def _narrative(
+    classification: PlaceClassification,
+    modules: list[BriefModule],
+    signals: list[SignalRead],
+) -> str:
+    opened = ", ".join(module.title.lower() for module in modules)
+    if classification.assumed:
+        lead = (
+            f"This place reads as a {classification.label.lower()} — assumed, because we have "
+            f"little type evidence yet."
         )
-    return "No signal coverage has been collected for this location yet."
+    else:
+        why = classification.reasons[0] if classification.reasons else "the public record"
+        lead = f"This place reads as {classification.label.lower()}. {why}"
+
+    trails = f"We opened {opened}." if opened else "No class-specific trails are configured."
+    answered = [
+        module.summary
+        for module in modules
+        if module.status == "answered" and module.summary
+    ]
+    if answered:
+        return f"{lead} {trails} {answered[0]}"
+    if signals:
+        return f"{lead} {trails}"
+    return (
+        f"{lead} {trails} Those trails are not covered by a live feed for this address, "
+        "so we are not inventing occupants, tenants, or contractors."
+    )
 
 
 def _anomaly_flags(signals: list[SignalRead]) -> list[str]:

@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -41,7 +42,9 @@ async def load_brief(
 
     snapshot = _load_snapshot(session, location.id)
     if snapshot is not None and not refreshed_any:
-        return Brief.model_validate(snapshot.payload)
+        current = _brief_from_snapshot(snapshot.payload)
+        if current is not None:
+            return current
 
     brief = _with_coverage(build_brief(session, request), location_input, ingesters)
     _upsert_snapshot(session, location.id, brief)
@@ -59,6 +62,18 @@ def _source_is_due(session: Session, location_id: int, source: str, now: datetim
     ).one_or_none()
     refreshed_at = watermark.refreshed_at if watermark is not None else None
     return is_refresh_due(interval, refreshed_at, now=now)
+
+
+def _brief_from_snapshot(payload: object) -> Brief | None:
+    try:
+        brief = Brief.model_validate(payload)
+    except ValidationError:
+        return None
+    if not brief.modules:
+        return None
+    if len(brief.place_class_reasons) != len(set(brief.place_class_reasons)):
+        return None
+    return brief
 
 
 def _load_snapshot(session: Session, location_id: int) -> BriefSnapshot | None:

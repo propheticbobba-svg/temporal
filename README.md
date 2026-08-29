@@ -18,14 +18,19 @@ on every click.
 
 | Layer | Role |
 |---|---|
+| `ingestion/capabilities.json` | Questions we ask, which place classes they belong to, provider order |
 | `ingestion/` | Fetch external data and write normalized signals (source of truth) |
 | `jobs/` | Ingester registry and refresh intervals |
-| `agent/` | Derive a brief from stored signals |
+| `agent/place_class.py` | Weighted votes: assessor, licenses, address tokens, permits |
+| `agent/graph.py` | Place → typed edges → entities, merged by normalized name |
+| `agent/` | Derive a brief: classify, relate, then emit class-specific modules |
 | `api/` | HTTP boundary: validate, orchestrate, return JSON |
 | `frontend/` | TypeScript client |
 
-Add a source by writing an ingester, registering it in `jobs/scheduler.py`,
-and adding ingestion tests.
+Add a city license as a JSON row. Add a new kind of question in
+`capabilities.json`. The brief UI opens only the capabilities for the
+winning place class. Uncovered trails stay visible; we do not invent
+occupants or gardeners.
 
 ## Local development
 

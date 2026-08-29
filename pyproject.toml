@@ -29,7 +29,7 @@ build-backend = "setuptools.build_meta"
 packages = ["agent", "api", "api.routes", "core", "db", "ingestion", "jobs"]
 
 [tool.setuptools.package-data]
-ingestion = ["biz_license_sources.json"]
+ingestion = ["biz_license_sources.json", "capabilities.json"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

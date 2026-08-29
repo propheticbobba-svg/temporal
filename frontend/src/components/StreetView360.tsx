@@ -30,6 +30,7 @@ type ViewState = "loading" | "ready" | "empty" | "error";
 
 interface StreetView360Props {
   location: Location | null;
+  compact?: boolean;
 }
 
 interface PanoramaSetup {
@@ -105,7 +106,7 @@ function getFocusable(container: HTMLElement): HTMLElement[] {
   });
 }
 
-export default function StreetView360({ location }: StreetView360Props) {
+export default function StreetView360({ location, compact = false }: StreetView360Props) {
   const titleId = useId();
   const hintId = useId();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -342,18 +343,18 @@ export default function StreetView360({ location }: StreetView360Props) {
   return (
     <>
       <span
-        className={styles.triggerWrap}
+        className={compact ? styles.triggerWrapCompact : styles.triggerWrap}
         title={hasCoordinates ? undefined : MISSING_COORDS_HINT}
       >
         <button
           ref={triggerRef}
-          className={styles.trigger}
+          className={compact ? styles.triggerCompact : styles.trigger}
           disabled={!hasCoordinates}
           onClick={handleOpen}
           type="button"
           aria-describedby={hasCoordinates ? undefined : hintId}
         >
-          View 360°
+          {compact ? "Street view" : "View 360°"}
         </button>
         {hasCoordinates ? null : (
           <span className={styles.srOnly} id={hintId}>

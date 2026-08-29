@@ -3,6 +3,10 @@
   margin: 10px 0 0;
 }
 
+.triggerWrapCompact {
+  display: inline-block;
+}
+
 .trigger {
   border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   border-radius: var(--radius);
@@ -21,6 +25,24 @@
 .trigger:disabled {
   border-color: var(--line);
   background: var(--bg-elev);
+  color: var(--ink-dim);
+}
+
+.triggerCompact {
+  border: 0;
+  border-radius: 9999px;
+  background: var(--bg-elev);
+  color: var(--ink-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 5px 10px;
+}
+
+.triggerCompact:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.triggerCompact:disabled {
   color: var(--ink-dim);
 }
 

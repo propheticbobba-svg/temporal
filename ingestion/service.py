@@ -1,11 +1,12 @@
 import logging
+import re
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from db.models import Location, Signal
 from ingestion.base import BaseIngester
-from ingestion.geocode import GeocodeIngester
+from ingestion.geocode import GeocodeIngester, is_compact_address
 from ingestion.schema import JsonObject, LocationInput, SignalCreate
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,11 @@ async def resolve_location(
     location_input: LocationInput,
     ingester: BaseIngester | None = None,
 ) -> tuple[Location, float]:
+    known = _known_pin(session, location_input.address)
+    if known is not None:
+        logger.info("Using stored coordinates for %s", location_input.address)
+        return known, 1.0
+
     geocode_ingester = ingester or GeocodeIngester()
     signals = await geocode_ingester.fetch(location_input)
     if not signals:
@@ -126,22 +132,111 @@ def _upsert_resolved_location(
     if location is None:
         location = _find_location_by_address(session, requested_address)
 
+    address = _canonical_address(requested_address, matched_address, None)
     if location is None:
-        location = Location(address=matched_address, latitude=latitude, longitude=longitude)
+        location = Location(address=address, latitude=latitude, longitude=longitude)
         session.add(location)
         session.flush()
         return location
 
-    location.address = matched_address
+    location.address = _canonical_address(requested_address, matched_address, location.address)
     location.latitude = latitude
     location.longitude = longitude
     session.flush()
     return location
 
 
+def _known_pin(session: Session, address: str) -> Location | None:
+    location = _find_location_by_address(session, address)
+    if location is not None and location.latitude is not None and location.longitude is not None:
+        return location
+    return None
+
+
 def _find_location_by_address(session: Session, address: str) -> Location | None:
-    statement = select(Location).where(Location.address == address)
-    return session.scalars(statement).one_or_none()
+    exact = session.scalars(select(Location).where(Location.address == address)).one_or_none()
+    if exact is not None:
+        return exact
+
+    key = _place_key(address)
+    if key is None:
+        return None
+
+    candidates = [
+        location
+        for location in session.scalars(select(Location)).all()
+        if _place_key(location.address) == key
+    ]
+    if not candidates:
+        return None
+    return min(candidates, key=lambda location: (len(location.address), location.address.count(",")))
+
+
+def _canonical_address(requested: str, matched: str, existing: str | None) -> str:
+    compact_matched = matched if is_compact_address(matched) else requested
+    if existing and is_compact_address(existing):
+        return existing
+    if existing and not is_compact_address(compact_matched):
+        return existing
+    return compact_matched if is_compact_address(compact_matched) else requested
+
+
+_STREET_ALIASES = {
+    "STREET": "ST",
+    "AVENUE": "AVE",
+    "DRIVE": "DR",
+    "ROAD": "RD",
+    "BOULEVARD": "BLVD",
+    "LANE": "LN",
+    "COURT": "CT",
+    "PLACE": "PL",
+    "SOUTH": "S",
+    "NORTH": "N",
+    "EAST": "E",
+    "WEST": "W",
+}
+_DIRECTION = {"N", "S", "E", "W", "NE", "NW", "SE", "SW"}
+_SUFFIXES = {"ST", "AVE", "DR", "RD", "BLVD", "LN", "CT", "PL", "WAY", "TER", "CIR"}
+_SKIP_TOKENS = {"UNITED", "STATES", "TOWNSHIP", "COUNTY", "DISTRICT"}
+
+
+def _place_key(address: str) -> tuple[str, str, str, str] | None:
+    tokens = [
+        _STREET_ALIASES.get(token, token)
+        for token in re.sub(r"[^A-Z0-9]+", " ", address.upper()).split()
+        if token not in _SKIP_TOKENS
+    ]
+    if not tokens:
+        return None
+
+    zip_code = ""
+    if tokens[-1].isdigit() and len(tokens[-1]) == 5:
+        zip_code = tokens[-1]
+        tokens = tokens[:-1]
+        if tokens and len(tokens[-1]) == 2 and tokens[-1].isalpha():
+            tokens = tokens[:-1]
+
+    house = next((token for token in tokens if token.isdigit()), None)
+    if house is None:
+        return None
+    index = tokens.index(house) + 1
+    direction = ""
+    if index < len(tokens) and tokens[index] in _DIRECTION:
+        direction = tokens[index]
+        index += 1
+
+    street: list[str] = []
+    while index < len(tokens):
+        token = tokens[index]
+        if token in _SUFFIXES or token.isdigit():
+            break
+        street.append(token)
+        index += 1
+        if len(street) >= 4:
+            break
+    if not street:
+        return None
+    return (house, direction, " ".join(street), zip_code)
 
 
 def _apply_geocode_signal(location: Location, signals: list[SignalCreate]) -> None:

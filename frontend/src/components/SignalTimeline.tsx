@@ -17,6 +17,12 @@ function timestamp(signal: Signal): number {
 }
 
 function flattenSignals(brief: Brief): TimelineSignal[] {
+  const fromModules = brief.modules.flatMap((module) =>
+    module.signals.map((signal) => ({ ...signal, categoryLabel: module.title })),
+  );
+  if (fromModules.length > 0) {
+    return fromModules.sort((first, second) => timestamp(second) - timestamp(first));
+  }
   return CATEGORIES.flatMap(({ key, label }) =>
     brief[key].signals.map((signal) => ({ ...signal, categoryLabel: label })),
   ).sort((first, second) => timestamp(second) - timestamp(first));
