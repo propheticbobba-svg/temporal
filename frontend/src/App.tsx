@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Composer, HomeIcon, Sidebar, TemporalMark, WorkspaceRail } from "./chrome";
+import { Composer, HomeIcon, Sidebar, TemporalMark, ThinkField, WorkspaceRail } from "./chrome";
 import { usePlaceSession, usePlaceSources, useWorkspace, type WorkspaceView } from "./query";
 import { StreetView } from "./StreetView";
 import { BriefView, EdgeTable, PlaceGraph, SourceGrid } from "./views";
@@ -141,15 +141,24 @@ export default function App() {
           {brief && view === "overview" ? <BriefView brief={brief} location={location} /> : null}
         </div>
 
-        <div className={`flex justify-center px-4 pt-2 min-[880px]:px-12 ${brief ? "pb-7 min-[880px]:pb-8" : "pb-[18vh]"}`}>
-          <Composer
-            address={draft}
-            docked={Boolean(brief)}
-            error={error}
-            isLoading={isLoading}
-            onAddressChange={setDraft}
-            onSubmit={open}
-          />
+        <div
+          className={
+            brief
+              ? "flex justify-center px-4 pt-2 pb-7 min-[880px]:px-12 min-[880px]:pb-8"
+              : "flex min-h-0 flex-1 flex-col px-4 pt-2 min-[880px]:px-12"
+          }
+        >
+          <div className="flex justify-center">
+            <Composer
+              address={draft}
+              docked={Boolean(brief)}
+              error={error}
+              isLoading={isLoading}
+              onAddressChange={setDraft}
+              onSubmit={open}
+            />
+          </div>
+          {!brief && !isLoading && !error ? <ThinkField /> : null}
         </div>
       </main>
 

@@ -34,6 +34,9 @@ stay visible; we do not invent occupants.
 
 ## Local development
 
+Copy `.env.example` to `.env` at the repo root. Set `VITE_GOOGLE_MAPS_API_KEY`
+if you want Street View. Backend settings and Vite both read that file.
+
 Two processes: API + Postgres via Docker Compose, and the Vite frontend.
 
 ### 1. Backend

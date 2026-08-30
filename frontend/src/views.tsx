@@ -142,7 +142,7 @@ export function PlaceGraph({ address, onOpenSources }: PlaceGraphProps) {
 }
 
 function GraphCanvas({ graph, onOpenSources }: { graph: WorkspaceGraph; onOpenSources: (focus?: string) => void }) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [open, setOpen] = useState<WorkspaceNode | null>(null);
   const sizes = useMemo(
     () => Object.fromEntries(graph.nodes.map((node) => [node.id, sizeFor(node)])),
     [graph.nodes],
@@ -153,7 +153,7 @@ function GraphCanvas({ graph, onOpenSources }: { graph: WorkspaceGraph; onOpenSo
         graph.nodes[0]?.id ?? "place",
         graph.nodes.map((node) => node.id),
         graph.links,
-        { direction: "vertical", sizes },
+        { sizes },
       ),
     [graph, sizes],
   );
@@ -162,7 +162,6 @@ function GraphCanvas({ graph, onOpenSources }: { graph: WorkspaceGraph; onOpenSo
     () => new Map(graph.links.map((link) => [`${link.from}->${link.to}`, link])),
     [graph.links],
   );
-  const neighbors = useMemo(() => adjacency(graph), [graph]);
   const pan = usePanZoom(layout.width, layout.height, graph.nodes[0]?.id ?? "");
 
   return (
@@ -189,9 +188,8 @@ function GraphCanvas({ graph, onOpenSources }: { graph: WorkspaceGraph; onOpenSo
         <svg className="block" width={layout.width} height={layout.height}>
           {layout.edges.map((edge) => {
             const meta = linkByPair.get(`${edge.from}->${edge.to}`);
-            const active = activeId === null || edge.from === activeId || edge.to === activeId;
             return (
-              <g key={`${edge.from}-${edge.to}`} className={active ? "" : "opacity-[0.18]"}>
+              <g key={`${edge.from}-${edge.to}`}>
                 <path className="fill-none stroke-graph stroke-[1.2]" d={curve(edge.sourceX, edge.sourceY, edge.targetX, edge.targetY)} />
                 {meta?.label ? (
                   <text
@@ -212,13 +210,10 @@ function GraphCanvas({ graph, onOpenSources }: { graph: WorkspaceGraph; onOpenSo
           if (!node) {
             return null;
           }
-          const active = activeId === null || activeId === node.id || Boolean(neighbors.get(activeId)?.has(node.id));
           return (
             <article
               key={node.id}
-              className={`absolute box-border flex cursor-pointer flex-col gap-1.5 overflow-hidden rounded-xl border px-3 py-3 ${roleClass(node.role)} ${
-                active ? "" : "opacity-[0.28]"
-              }`}
+              className={`absolute box-border flex cursor-pointer flex-col gap-1.5 overflow-hidden rounded-xl border px-3 py-3 ${roleClass(node.role)}`}
               onClick={() => {
                 if (pan.consumeClick()) {
                   return;
@@ -227,7 +222,7 @@ function GraphCanvas({ graph, onOpenSources }: { graph: WorkspaceGraph; onOpenSo
                   onOpenSources(node.focus);
                   return;
                 }
-                setActiveId((current) => (current === node.id ? null : node.id));
+                setOpen(node);
               }}
               style={{ left: box.x, top: box.y, width: box.width, height: box.height }}
             >
@@ -247,16 +242,89 @@ function GraphCanvas({ graph, onOpenSources }: { graph: WorkspaceGraph; onOpenSo
           );
         })}
       </div>
-      <div className="pointer-events-none absolute right-3 bottom-3 flex items-center gap-2.5">
-        <p className="m-0 text-[0.72rem] text-dim">Drag to pan · scroll to zoom</p>
-        <button
-          className="pointer-events-auto rounded-full bg-elev px-2.5 py-1 text-[0.72rem] font-medium text-muted hover:text-ink"
-          onClick={pan.fit}
-          type="button"
-        >
-          Recenter
-        </button>
-      </div>
+      <button
+        className="absolute right-3 bottom-3 rounded-full bg-elev px-2.5 py-1 text-[0.72rem] font-medium text-muted hover:text-ink"
+        onClick={pan.fit}
+        type="button"
+      >
+        Recenter
+      </button>
+      {open ? (
+        <NodeModal
+          node={open}
+          onClose={() => setOpen(null)}
+          onSources={() => {
+            const focus = open.focus;
+            setOpen(null);
+            onOpenSources(focus);
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function NodeModal({
+  node,
+  onClose,
+  onSources,
+}: {
+  node: WorkspaceNode;
+  onClose: () => void;
+  onSources: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="absolute inset-0 z-10 flex items-end justify-center bg-black/55 p-4 sm:items-center"
+      onClick={onClose}
+      role="presentation"
+    >
+      <article
+        aria-labelledby="graph-node-title"
+        aria-modal="true"
+        className="max-h-[min(72vh,520px)] w-full max-w-md overflow-auto rounded-2xl border border-line bg-elev p-4"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+      >
+        <h2 className="m-0 text-base leading-snug font-medium text-white" id="graph-node-title">
+          {node.title}
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-ink">{node.body}</p>
+        <footer className="mt-4 flex items-center justify-between gap-3">
+          <p className="m-0 text-xs text-muted">
+            {node.tag}
+            {node.confidence != null ? ` · ${Math.round(node.confidence * 100)}%` : ""}
+          </p>
+          <div className="flex gap-2">
+            {node.role !== "place" ? (
+              <button
+                className="rounded-full bg-hover px-3 py-1 text-xs font-medium text-ink"
+                onClick={onSources}
+                type="button"
+              >
+                Sources
+              </button>
+            ) : null}
+            <button
+              className="rounded-full bg-white px-3 py-1 text-xs font-medium text-bg"
+              onClick={onClose}
+              type="button"
+            >
+              Close
+            </button>
+          </div>
+        </footer>
+      </article>
     </div>
   );
 }
@@ -272,19 +340,6 @@ function roleClass(role: WorkspaceNode["role"]): string {
     return "border-dashed border-graph-line bg-graph-fill";
   }
   return "border-graph-line bg-graph-fill";
-}
-
-function adjacency(graph: WorkspaceGraph): Map<string, Set<string>> {
-  const next = new Map<string, Set<string>>();
-  for (const link of graph.links) {
-    const from = next.get(link.from) ?? new Set<string>();
-    const to = next.get(link.to) ?? new Set<string>();
-    from.add(link.to);
-    to.add(link.from);
-    next.set(link.from, from);
-    next.set(link.to, to);
-  }
-  return next;
 }
 
 function sizeFor(node: WorkspaceNode): { width: number; height: number } {

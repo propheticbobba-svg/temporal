@@ -1,13 +1,12 @@
-import { useEffect, useRef, type FormEvent } from "react";
+import { useEffect, useRef, type CSSProperties, type FormEvent } from "react";
 
 import type { WorkspaceView } from "./query";
 
-const MARK = ["T", "E", "M", "P", "O", "R", "A", "L"] as const;
-const CORE = 4;
-
-function fuseDelay(index: number): number {
-  return 40 + Math.abs(index - CORE) * 70;
-}
+const MARK = {
+  word: "TEMPORAL",
+  delay: 78,
+  fuse: ["#22d3ee", "#38bdf8", "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#f472b6"],
+} as const;
 
 export function TemporalMark({
   onHome,
@@ -19,23 +18,26 @@ export function TemporalMark({
   return (
     <button
       key={replay}
-      className="border-0 bg-transparent px-1 py-1"
+      className="block border-0 bg-transparent px-1 py-0.5"
       onClick={onHome}
       type="button"
       aria-label="Home"
     >
       <span className="mark">
-        {MARK.map((letter, index) => (
+        {MARK.word.split("").map((letter, index) => (
           <span
             key={`${letter}-${index}`}
-            className={index === CORE ? "mark-letter mark-letter-core" : "mark-letter"}
-            style={{ animationDelay: `${fuseDelay(index)}ms` }}
+            className="mark-letter"
+            style={
+              {
+                animationDelay: `${index * MARK.delay}ms`,
+                "--fuse": MARK.fuse[index],
+              } as CSSProperties
+            }
           >
             {letter}
           </span>
         ))}
-        <span className="mark-plume mark-plume-west" aria-hidden />
-        <span className="mark-plume mark-plume-east" aria-hidden />
       </span>
     </button>
   );
@@ -252,23 +254,21 @@ export function Composer({
   }
 
   return (
-    <div className={`w-full ${docked ? "max-w-[760px]" : "max-w-[720px]"}`}>
-      <form className="flex min-h-14 items-center gap-2 rounded-full bg-[#1a1a1a] py-2 pr-2 pl-3.5" onSubmit={handleSubmit}>
-        <button
-          className="grid size-9 shrink-0 place-items-center rounded-full text-muted hover:text-ink"
-          onClick={() => onAddressChange(EXAMPLE_ADDRESS)}
-          type="button"
-          aria-label="Use example address"
-        >
-          <PlusIcon />
-        </button>
+    <div className={`w-full ${docked ? "max-w-xl" : "mx-auto max-w-lg"}`}>
+      <form
+        className="flex items-center gap-3 rounded-full border border-white/8 bg-elev py-1.5 pr-1.5 pl-4 focus-within:border-white/16"
+        onSubmit={handleSubmit}
+      >
+        <span className="text-dim">
+          <SearchIcon size={16} />
+        </span>
         <label className="sr-only" htmlFor="address-search">
           Address
         </label>
         <input
           id="address-search"
           ref={inputRef}
-          className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-[0.9375rem] text-white outline-none placeholder:text-dim"
+          className="min-w-0 flex-1 bg-transparent py-2 text-[0.9375rem] text-white outline-none placeholder:text-dim"
           onChange={(event) => onAddressChange(event.target.value)}
           placeholder="An address, a block, a site"
           type="text"
@@ -276,7 +276,7 @@ export function Composer({
           autoComplete="street-address"
         />
         <button
-          className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-bg disabled:bg-[#2c2c2c] disabled:text-dim"
+          className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-bg disabled:bg-hover disabled:text-dim"
           disabled={isLoading || address.trim().length === 0}
           type="submit"
           aria-label={isLoading ? "Working" : "Build brief"}
@@ -292,7 +292,70 @@ export function Composer({
         <p className="mt-2.5 px-4 text-center text-[0.82rem] text-muted" aria-live="polite">
           Reading the environment
         </p>
+      ) : !docked ? (
+        <button
+          className="mx-auto mt-3 block border-0 bg-transparent text-xs text-dim hover:text-muted"
+          onClick={() => onAddressChange(EXAMPLE_ADDRESS)}
+          type="button"
+        >
+          Try an example
+        </button>
       ) : null}
+    </div>
+  );
+}
+
+const THINK_COLS = 48;
+const THINK_ROWS = 16;
+const THINK_WAVE_MS = 6800;
+
+function thinkStop(row: number) {
+  const t = row / Math.max(1, THINK_ROWS - 1);
+  return {
+    fuse: dimRgb(mixFuse(t), 0.5 - t * 0.26),
+    peak: (0.34 - t * 0.14).toFixed(3),
+  };
+}
+
+function mixFuse(t: number): string {
+  const stops = MARK.fuse.length - 1;
+  const x = Math.min(1, Math.max(0, t)) * stops;
+  const index = Math.min(stops - 1, Math.floor(x));
+  const frac = x - index;
+  const from = hexRgb(MARK.fuse[index]);
+  const to = hexRgb(MARK.fuse[index + 1]);
+  return `rgb(${from.map((value, channel) => Math.round(value + (to[channel] - value) * frac)).join(",")})`;
+}
+
+function dimRgb(rgb: string, amount: number): string {
+  const values = rgb.match(/\d+/g)?.map(Number) ?? [128, 128, 128];
+  return `rgb(${values.map((value) => Math.round(value * amount + 28 * (1 - amount))).join(",")})`;
+}
+
+function hexRgb(hex: string): [number, number, number] {
+  return [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16)) as [number, number, number];
+}
+
+export function ThinkField() {
+  return (
+    <div className="think-field" aria-hidden>
+      {Array.from({ length: THINK_COLS * THINK_ROWS }, (_, index) => {
+        const column = index % THINK_COLS;
+        const row = Math.floor(index / THINK_COLS);
+        const stop = thinkStop(row);
+        return (
+          <i
+            key={index}
+            style={
+              {
+                animationDelay: `${row * 200 + column * 3 - THINK_WAVE_MS}ms`,
+                "--fuse": stop.fuse,
+                "--peak": stop.peak,
+              } as CSSProperties
+            }
+          />
+        );
+      })}
     </div>
   );
 }
