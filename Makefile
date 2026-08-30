@@ -8,14 +8,17 @@ MYPY := $(if $(wildcard $(VENV_BIN)/mypy),$(VENV_BIN)/mypy,mypy)
 dev:
 	docker compose up --build postgres api
 
+api:
+	$(VENV_BIN)/uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
+
 frontend:
 	npm --prefix frontend install
 	npm --prefix frontend run dev
 
 test:
-	$(PYTEST) $(path)
+	PYTHONDONTWRITEBYTECODE=1 $(PYTEST) $(path)
 
 lint:
-	$(RUFF) check .
-	$(MYPY) .
+	PYTHONDONTWRITEBYTECODE=1 $(RUFF) check .
+	PYTHONDONTWRITEBYTECODE=1 $(MYPY) backend tests
 	npm --prefix frontend run build

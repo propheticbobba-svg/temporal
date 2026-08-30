@@ -11,26 +11,26 @@ on every click.
 ## Stack
 
 - Backend: Python 3.11, FastAPI, SQLAlchemy, PostgreSQL
-- Frontend: TypeScript, React, Vite
+- Frontend: TypeScript, React, Vite, TanStack Query, Tailwind
 - Ingestion: httpx against public APIs (Census, Socrata, optional permits)
 
-## Layers
+## Layout
 
-| Layer | Role |
+| Path | Role |
 |---|---|
-| `ingestion/capabilities.json` | Questions we ask, which place classes they belong to, provider order |
-| `ingestion/` | Fetch external data and write normalized signals (source of truth) |
-| `jobs/` | Ingester registry and refresh intervals |
-| `agent/place_class.py` | Weighted votes: assessor, licenses, address tokens, permits |
-| `agent/graph.py` | Place → typed edges → entities, merged by normalized name |
-| `agent/` | Derive a brief: classify, relate, then emit class-specific modules |
-| `api/` | HTTP boundary: validate, orchestrate, return JSON |
-| `frontend/` | TypeScript client |
+| `backend/app.py` | HTTP door |
+| `backend/fetch.py` | Talk to the world: geocode, licenses, permits |
+| `backend/place.py` | Identify a place, persist signals, decide what is stale |
+| `backend/brief.py` | Classify, graph, modules, snapshot |
+| `backend/store.py` | Settings, models, indexed place key |
+| `backend/catalog/` | Capability questions and license-source registry |
+| `frontend/` | TanStack Query client |
+| `tests/` | API and unit checks |
 
-Add a city license as a JSON row. Add a new kind of question in
-`capabilities.json`. The brief UI opens only the capabilities for the
-winning place class. Uncovered trails stay visible; we do not invent
-occupants or gardeners.
+One path: address → `fetch` → `place` → `brief` → Query cache → graph.
+
+Add a city license as a JSON row in `backend/catalog/`. Uncovered trails
+stay visible; we do not invent occupants.
 
 ## Local development
 

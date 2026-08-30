@@ -1,105 +1,107 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 
-import PlaceGraph from "./components/PlaceGraph";
-import BriefView from "./components/BriefView";
-import Composer from "./components/Composer";
-import EdgeTable from "./components/EdgeTable";
-import Sidebar from "./components/Sidebar";
-import SourceGrid from "./components/SourceGrid";
-import StreetView360 from "./components/StreetView360";
-import WorkspaceRail, { type WorkspaceView } from "./components/WorkspaceRail";
-import { useBrief } from "./hooks/useBrief";
-import { buildWorkspaceGraph, sourceCards } from "./lib/workspaceGraph";
-import styles from "./App.module.css";
+import { Composer, HomeIcon, Sidebar, TemporalMark, WorkspaceRail } from "./chrome";
+import { usePlaceSession, usePlaceSources, useWorkspace, type WorkspaceView } from "./query";
+import { StreetView } from "./StreetView";
+import { BriefView, EdgeTable, PlaceGraph, SourceGrid } from "./views";
+
+const TABS: WorkspaceView[] = ["graph", "sources", "table", "overview"];
 
 export default function App() {
-  const { submitAddress, brief, location, isLoading, error, history, reset } = useBrief();
-  const [address, setAddress] = useState("");
+  const { draft, setDraft, address, history, open, reset, place, isLoading, error } = usePlaceSession();
+  const brief = place?.brief;
+  const location = place?.location ?? null;
+  const { view, sourceFocus, openSources, changeView } = useWorkspace(brief?.address);
+  const sources = usePlaceSources(address, { query: "", category: null });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("graph");
-  const [sourceFocus, setSourceFocus] = useState<string | null>(null);
+  const [markKey, setMarkKey] = useState(0);
 
-  const hasBrief = Boolean(brief);
-  const graph = useMemo(() => (brief ? buildWorkspaceGraph(brief) : null), [brief]);
-  const sources = useMemo(() => (brief ? sourceCards(brief) : []), [brief]);
-
-  useEffect(() => {
-    setWorkspaceView("graph");
-    setSourceFocus(null);
-  }, [brief?.address]);
-
-  function openSources(focus?: string) {
-    setSourceFocus(focus ?? null);
-    setWorkspaceView("sources");
-  }
-
-  function changeView(view: WorkspaceView) {
-    setSourceFocus(null);
-    setWorkspaceView(view);
-  }
-
-  function focusComposer() {
-    document.getElementById("address-search")?.focus();
+  function closeSidebar() {
     setSidebarOpen(false);
   }
 
+  function goHome() {
+    reset();
+    closeSidebar();
+    setMarkKey((key) => key + 1);
+  }
+
   return (
-    <div className={styles.app}>
+    <div className="flex h-full bg-bg">
       <Sidebar
         activeAddress={brief?.address ?? null}
         collapsed={sidebarCollapsed}
         history={history}
         open={sidebarOpen}
-        onFocusComposer={focusComposer}
-        onNew={() => {
-          reset();
-          setAddress("");
-          setSidebarOpen(false);
+        onFocusComposer={() => {
+          document.getElementById("address-search")?.focus();
+          closeSidebar();
         }}
+        onNew={goHome}
+        onHome={goHome}
+        replay={markKey}
         onSelect={(value) => {
-          setAddress(value);
-          setSidebarOpen(false);
-          void submitAddress(value);
+          open(value);
+          closeSidebar();
         }}
         onToggle={() => {
-          setSidebarOpen(false);
+          closeSidebar();
           setSidebarCollapsed((collapsed) => !collapsed);
         }}
       />
 
       {sidebarOpen ? (
         <button
-          className={styles.backdrop}
-          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-[15] border-0 bg-black/55 min-[880px]:hidden"
+          onClick={closeSidebar}
           type="button"
           aria-label="Close menu"
         />
       ) : null}
 
-      <main className={styles.stage} data-has-brief={hasBrief} data-view={workspaceView}>
-        <header className={styles.topbar}>
+      <main className="flex min-w-0 flex-1 flex-col">
+        <header className="flex min-h-12 items-center gap-3 px-4 pt-3.5 min-[880px]:px-6 min-[880px]:pt-4">
+          {sidebarCollapsed ? (
+            <span className="hidden min-[880px]:inline">
+              <TemporalMark onHome={goHome} replay={markKey} />
+            </span>
+          ) : null}
           <button
-            className={styles.menu}
-            data-collapsed={sidebarCollapsed}
+            className={`border-0 bg-transparent text-sm font-medium text-muted ${
+              sidebarCollapsed ? "min-[880px]:inline" : "min-[880px]:hidden"
+            }`}
             onClick={() => {
               if (sidebarCollapsed) {
                 setSidebarCollapsed(false);
                 return;
               }
-              setSidebarOpen((open) => !open);
+              setSidebarOpen((openMenu) => !openMenu);
             }}
             type="button"
           >
             Places
           </button>
           {brief ? (
-            <div className={styles.topActions}>
-              <div className={styles.mobileTabs} role="tablist" aria-label="Workspace">
-                {(["graph", "sources", "table", "overview"] as const).map((item) => (
+            <button
+              className="inline-flex items-center gap-1.5 border-0 bg-transparent text-sm font-medium text-muted hover:text-ink"
+              onClick={goHome}
+              type="button"
+            >
+              <HomeIcon />
+              Home
+            </button>
+          ) : null}
+          {brief ? (
+            <div className="ml-auto flex items-center gap-2">
+              <div className="flex gap-0.5 min-[880px]:hidden" role="tablist" aria-label="Workspace">
+                {TABS.map((item) => (
                   <button
                     key={item}
-                    aria-selected={workspaceView === item}
+                    aria-selected={view === item}
+                    className={`rounded-full px-2 py-1 text-xs font-medium capitalize ${
+                      view === item ? "bg-elev text-ink" : "text-dim"
+                    }`}
                     onClick={() => changeView(item)}
                     role="tab"
                     type="button"
@@ -108,51 +110,55 @@ export default function App() {
                   </button>
                 ))}
               </div>
-              <StreetView360 compact location={location} />
+              <StreetView compact location={location} />
             </div>
           ) : null}
         </header>
 
-        <div className={styles.scroll}>
-          {!hasBrief && !isLoading ? (
-            <div className={styles.empty}>
-              <h1>What place is this?</h1>
-              <p>Open an address. We classify the place, then follow only the trails that belong to that type.</p>
+        <div
+          className={
+            brief
+              ? view === "graph"
+                ? "flex min-h-0 flex-1 flex-col overflow-hidden p-0"
+                : "flex min-h-0 flex-1 flex-col overflow-auto px-5 py-2 min-[880px]:px-12"
+              : "flex min-h-0 flex-1 flex-col overflow-auto px-5 min-[880px]:px-12"
+          }
+        >
+          {!brief && !isLoading ? <div className="flex-1" /> : null}
+          {isLoading ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 pb-[8vh] text-center">
+              <h1 className="m-0 text-[clamp(2rem,5vw,3.75rem)] leading-none font-medium tracking-tight text-white">
+                Reading the environment
+              </h1>
+              <p className="m-0 max-w-lg text-lg leading-relaxed text-muted">
+                Pulling every signal we can from this location.
+              </p>
             </div>
           ) : null}
-          {isLoading && !hasBrief ? (
-            <div className={styles.empty}>
-              <h1>Reading the environment</h1>
-              <p>Pulling every signal we can from this location.</p>
-            </div>
-          ) : null}
-          {brief && workspaceView === "graph" && graph ? (
-            <PlaceGraph graph={graph} onOpenSources={openSources} />
-          ) : null}
-          {brief && workspaceView === "sources" ? <SourceGrid cards={sources} focus={sourceFocus} /> : null}
-          {brief && workspaceView === "table" ? <EdgeTable brief={brief} /> : null}
-          {brief && workspaceView === "overview" ? (
-            <BriefView brief={brief} location={location} />
-          ) : null}
+          {brief && address && view === "graph" ? <PlaceGraph address={address} onOpenSources={openSources} /> : null}
+          {brief && address && view === "sources" ? <SourceGrid address={address} focus={sourceFocus} /> : null}
+          {brief && view === "table" ? <EdgeTable brief={brief} /> : null}
+          {brief && view === "overview" ? <BriefView brief={brief} location={location} /> : null}
         </div>
 
-        <div className={styles.composerSlot}>
+        <div className={`flex justify-center px-4 pt-2 min-[880px]:px-12 ${brief ? "pb-7 min-[880px]:pb-8" : "pb-[18vh]"}`}>
           <Composer
-            address={address}
-            docked={hasBrief}
+            address={draft}
+            docked={Boolean(brief)}
             error={error}
             isLoading={isLoading}
-            onAddressChange={setAddress}
-            onSubmit={submitAddress}
+            onAddressChange={setDraft}
+            onSubmit={open}
           />
         </div>
       </main>
 
       {brief ? (
         <WorkspaceRail
-          sourceCount={sources.length}
-          view={workspaceView}
+          sourceCount={sources.data?.total ?? 0}
+          view={view}
           onChange={changeView}
+          onHome={goHome}
         />
       ) : null}
     </div>
