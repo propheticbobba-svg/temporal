@@ -314,17 +314,18 @@ def compact_geocode_query(address: str) -> str:
 
     parts = [part.strip() for part in stripped.split(",") if part.strip()]
     parts = [part for part in parts if part.lower() not in {"united states", "usa"}]
-    street = next(
-        (part for part in parts if re.search(r"\d", part)),
-        parts[0] if parts else stripped,
-    )
+    street = next((part for part in parts if re.search(r"\d", part)), None)
     zip_part = next(
         (part for part in reversed(parts) if re.search(r"\b\d{5}(?:-\d{4})?\b", part)),
         None,
     )
-    if zip_part and zip_part != street:
+    if street and zip_part and zip_part != street:
         return f"{street}, {zip_part}"
-    return street
+    if street:
+        return street
+    if len(parts) >= 2:
+        return ", ".join(parts[: min(4, len(parts))])
+    return parts[0] if parts else stripped
 
 
 def _short_osm_label(display_name: str) -> str:

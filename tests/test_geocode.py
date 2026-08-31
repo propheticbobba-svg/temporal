@@ -165,3 +165,6 @@ def test_compact_geocode_query_strips_nominatim_display_name() -> None:
     assert compact_geocode_query("200 S WACKER DR, CHICAGO, IL, 60606") == (
         "200 S WACKER DR, CHICAGO, IL, 60606"
     )
+    assert compact_geocode_query(
+        "Bottega, Valencia Street, Mission, San Francisco, CA, USA"
+    ) == "Bottega, Valencia Street, Mission, San Francisco"
