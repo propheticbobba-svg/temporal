@@ -15,6 +15,8 @@ services:
 
   api:
     build: .
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql+psycopg://temporal_proj:temporal_proj@postgres:5432/temporal_proj
     ports:

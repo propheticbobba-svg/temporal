@@ -21,6 +21,19 @@ def test_business_licenses_run_after_permits_and_refresh_weekly() -> None:
     assert registrations[2].refresh_interval == RefreshInterval.WEEKLY
 
 
+def test_crime_nearby_registers_after_licenses_and_refreshes_weekly() -> None:
+    registrations = {
+        registration.source: registration for registration in get_registered_ingesters()
+    }
+
+    assert registrations["crime_nearby"].refresh_interval == RefreshInterval.WEEKLY
+    assert [registration.source for registration in get_registered_ingesters()[:3]] == [
+        "geocode",
+        "permits",
+        "biz_licenses",
+    ]
+
+
 def test_refresh_is_due_when_never_ingested() -> None:
     assert is_refresh_due(RefreshInterval.WEEKLY, None) is True
 

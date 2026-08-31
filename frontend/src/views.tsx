@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent, t
 import { formatCoordinate, formatDate, formatGeneratedAt } from "./format";
 import { computePlaceDagLayout, type WorkspaceGraph, type WorkspaceNode, type SourceCard } from "./graph";
 import { usePlaceGraph, usePlaceSources } from "./query";
-import type { Brief, BriefModule, GraphEntity, Location, Signal } from "./types";
+import type { Brief, BriefModule, CategoryBrief, GraphEntity, Location, Signal } from "./types";
 import { REL_LABEL, STATUS_LABEL } from "./types";
 import { StreetView } from "./StreetView";
 
@@ -676,9 +676,60 @@ function SignalTimeline({ brief }: SignalTimelineProps) {
 }
 
 function flattenSignals(brief: Brief): TimelineSignal[] {
-  return brief.modules
-    .flatMap((module) => module.signals.map((signal) => ({ ...signal, categoryLabel: module.title })))
-    .sort((first, second) => Date.parse(second.observed_at) - Date.parse(first.observed_at));
+  const moduleSignals = brief.modules.flatMap((module) =>
+    module.signals.map((signal) => ({ ...signal, categoryLabel: module.title })),
+  );
+  const seen = new Set(
+    moduleSignals.map((signal) => `${signal.source}\0${signal.observed_at}\0${signal.summary}`),
+  );
+  const contextSignals = brief.environmental_context.signals
+    .filter((signal) => !seen.has(`${signal.source}\0${signal.observed_at}\0${signal.summary}`))
+    .map((signal) => ({ ...signal, categoryLabel: "Nearby crime" }));
+
+  return [...moduleSignals, ...contextSignals].sort(
+    (first, second) => Date.parse(second.observed_at) - Date.parse(first.observed_at),
+  );
+}
+
+function EnvironmentalContextPanel({ category }: { category: CategoryBrief }) {
+  const crime = category.signals.find((signal) => signal.source === "crime_nearby");
+  if (crime == null) {
+    return null;
+  }
+
+  const buckets = [
+    { label: "Burglary", count: asCount(crime.value.burglary) },
+    { label: "Vehicle", count: asCount(crime.value.vehicle) },
+    { label: "Robbery", count: asCount(crime.value.robbery) },
+    { label: "Vandalism", count: asCount(crime.value.vandalism) },
+  ];
+
+  return (
+    <section className="mt-7" aria-label="Environmental context">
+      <article className="rounded-[20px] bg-elev px-4.5 py-4">
+        <div>
+          <h2 className="m-0 text-[0.95rem] font-medium tracking-tight text-white">Nearby crime</h2>
+          <p className="mt-1 text-[0.78rem] leading-normal text-muted">
+            Incident counts within walking distance over the last 12 months. Descriptive only — not a
+            safety grade.
+          </p>
+        </div>
+        <p className="mt-3.5 text-[0.88rem] leading-normal text-ink">{crime.summary}</p>
+        <dl className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {buckets.map((bucket) => (
+            <div key={bucket.label} className="rounded-[14px] bg-hover px-3 py-2.5">
+              <dt className="text-[0.68rem] tracking-wide text-dim uppercase">{bucket.label}</dt>
+              <dd className="mt-1 font-mono text-[1.05rem] text-white">{bucket.count ?? "—"}</dd>
+            </div>
+          ))}
+        </dl>
+      </article>
+    </section>
+  );
+}
+
+function asCount(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 interface BriefViewProps {
@@ -752,6 +803,8 @@ export function BriefView({ brief, location }: BriefViewProps) {
           />
         ))}
       </section>
+
+      <EnvironmentalContextPanel category={brief.environmental_context} />
 
       <SignalTimeline brief={brief} />
     </article>
