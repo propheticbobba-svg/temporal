@@ -99,7 +99,6 @@ export function usePlaceSession() {
     if (!trimmed) {
       return;
     }
-    setDraft(trimmed);
     setAddress(trimmed);
   }, []);
 
