@@ -16,6 +16,7 @@ from .catalog import CAPABILITIES_PATH
 from .fetch import (
     BaseIngester,
     BizLicensesIngester,
+    CrimeNearbyIngester,
     GeocodeIngester,
     JsonObject,
     LocationInput,
@@ -131,6 +132,7 @@ STALENESS_BY_SOURCE: dict[str, RefreshInterval] = {
     "geocode": RefreshInterval.NEVER,
     "permits": RefreshInterval.WEEKLY,
     "biz_licenses": RefreshInterval.WEEKLY,
+    "crime_nearby": RefreshInterval.WEEKLY,
     "satellite": RefreshInterval.MONTHLY,
     "environmental": RefreshInterval.MONTHLY,
 }
@@ -150,6 +152,11 @@ REGISTERED_INGESTERS: tuple[IngesterRegistration, ...] = (
         source="biz_licenses",
         refresh_interval=STALENESS_BY_SOURCE["biz_licenses"],
         ingester=BizLicensesIngester(),
+    ),
+    IngesterRegistration(
+        source="crime_nearby",
+        refresh_interval=STALENESS_BY_SOURCE["crime_nearby"],
+        ingester=CrimeNearbyIngester(),
     ),
 )
 

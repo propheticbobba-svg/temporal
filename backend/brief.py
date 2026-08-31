@@ -575,7 +575,10 @@ SOURCE_TO_CATEGORY: dict[str, BriefCategoryName] = {
     "biz_licenses": "operational_activity",
     "satellite": "physical_condition",
     "environmental": "environmental_context",
+    "crime_nearby": "environmental_context",
 }
+
+UNSCORED_SOURCES: frozenset[str] = frozenset({"crime_nearby"})
 
 
 def build_brief(session: Session, request: BriefRequest) -> Brief:
@@ -666,8 +669,9 @@ def _build_category(signals: list[SignalRead]) -> CategoryBrief:
     if not signals:
         return CategoryBrief()
 
+    scorable = [signal for signal in signals if signal.source not in UNSCORED_SOURCES]
     return CategoryBrief(
-        score=_score(signals),
+        score=_score(scorable) if scorable else None,
         summary=signals[0].summary,
         signals=signals,
     )

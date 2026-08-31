@@ -63,6 +63,8 @@ class Settings(BaseSettings):
     database_url: str = Field(default="sqlite:///./temporal_proj.db")
     permits_api_url: str | None = Field(default=None)
     socrata_app_token: str | None = Field(default=None)
+    socrata_host: str = Field(default="data.sf.gov")
+    socrata_api_version: str = Field(default="v2")
 
 
 @lru_cache
