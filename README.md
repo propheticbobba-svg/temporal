@@ -63,7 +63,7 @@ to the API.
 Use a full street address with city and state:
 
 ```text
-4600 Silver Hill Rd Washington DC 20233
+501 O'Farrell St San Francisco CA 94102
 ```
 
 Street-only inputs often fail geocoding.

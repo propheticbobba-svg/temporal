@@ -68,32 +68,36 @@
 }
 
 .think-field {
-  position: relative;
+  position: absolute;
+  inset: 0;
   display: grid;
-  flex: 1;
   grid-template-columns: repeat(48, minmax(0, 1fr));
   align-content: space-evenly;
   justify-items: center;
   gap: 0;
-  width: 100%;
-  min-height: 0;
-  padding: 1.25rem 2vw 0;
+  padding: 20vh 5vw 8vh;
   pointer-events: none;
-  mask-image: linear-gradient(to bottom, transparent 0%, #000 10%, #000 78%, transparent 100%);
+  mask-image:
+    linear-gradient(to bottom, transparent 0%, #000 36%, #000 78%, transparent 100%),
+    linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%);
+  mask-composite: intersect;
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0%, #000 36%, #000 78%, transparent 100%),
+    linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%);
+  -webkit-mask-composite: source-in;
 }
 
 .think-field::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, #22d3ee 4%, transparent),
-    color-mix(in srgb, #3b82f6 3.5%, transparent),
-    color-mix(in srgb, #6366f1 3%, transparent),
-    color-mix(in srgb, #8b5cf6 2.5%, transparent),
-    color-mix(in srgb, #d946ef 2%, transparent),
-    transparent
+  background: radial-gradient(
+    92% 70% at 50% 64%,
+    color-mix(in srgb, #22d3ee 5%, transparent),
+    color-mix(in srgb, #3b82f6 4%, transparent) 32%,
+    color-mix(in srgb, #8b5cf6 3%, transparent) 56%,
+    color-mix(in srgb, #d946ef 1.5%, transparent) 70%,
+    transparent 82%
   );
 }
 

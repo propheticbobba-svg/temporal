@@ -1,4 +1,4 @@
-import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 
 import { buildWorkspaceGraph, searchSources, sourceCards, sourceCategories } from "./graph";
@@ -17,11 +17,7 @@ export const queryClient = new QueryClient({
 
 const keys = {
   place: (address: string) => ["place", address] as const,
-  recent: () => ["places", "recent"] as const,
 };
-
-const RECENT_KEY = "temporal.recent";
-const RECENT_LIMIT = 8;
 
 export class RequestError extends Error {
   readonly status?: number;
@@ -93,41 +89,10 @@ export function usePlaceSources(address: string | null, filter: SourceFilter) {
   });
 }
 
-export function useRecentPlaces() {
-  return useQuery({
-    queryKey: keys.recent(),
-    queryFn: readRecent,
-    staleTime: Infinity,
-    gcTime: Infinity,
-  });
-}
-
-export function useRememberPlace() {
-  const client = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (address: string) => address,
-    onSuccess: (address) => {
-      const next = remember(client.getQueryData<string[]>(keys.recent()) ?? readRecent(), address);
-      persist(next);
-      client.setQueryData(keys.recent(), next);
-    },
-  });
-}
-
 export function usePlaceSession() {
   const [draft, setDraft] = useState("");
   const [address, setAddress] = useState<string | null>(null);
   const place = usePlaceQuery(address);
-  const recent = useRecentPlaces();
-  const remember = useRememberPlace();
-
-  useEffect(() => {
-    const resolved = place.data?.location.address;
-    if (resolved) {
-      remember.mutate(resolved);
-    }
-  }, [place.data?.location.address, remember.mutate]);
 
   const open = useCallback((value: string) => {
     const trimmed = value.trim();
@@ -147,7 +112,6 @@ export function usePlaceSession() {
     draft,
     setDraft,
     address: place.data?.location.address ?? address,
-    history: recent.data ?? [],
     open,
     reset,
     place: place.data,
@@ -220,26 +184,3 @@ async function readError(response: Response): Promise<string> {
   }
 }
 
-function readRecent(): string[] {
-  try {
-    const raw = window.localStorage.getItem(RECENT_KEY);
-    if (!raw) {
-      return [];
-    }
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
-function remember(history: string[], address: string): string[] {
-  if (history[0] === address) {
-    return history;
-  }
-  return [address, ...history.filter((item) => item !== address)].slice(0, RECENT_LIMIT);
-}
-
-function persist(history: string[]): void {
-  window.localStorage.setItem(RECENT_KEY, JSON.stringify(history));
-}

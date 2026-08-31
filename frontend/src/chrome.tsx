@@ -56,14 +56,6 @@ export function SearchIcon({ size = 18 }: IconProps) {
   );
 }
 
-export function PlusIcon({ size = 18 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export function ArrowUpIcon({ size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -116,110 +108,7 @@ export function TableIcon({ size = 16 }: IconProps) {
   );
 }
 
-export function PanelIcon({ size = 18 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M9 4.5v15" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
-interface SidebarProps {
-  history: string[];
-  activeAddress: string | null;
-  collapsed: boolean;
-  open: boolean;
-  onToggle: () => void;
-  onNew: () => void;
-  onSelect: (address: string) => void;
-  onFocusComposer: () => void;
-  onHome: () => void;
-  replay?: number;
-}
-
-export function Sidebar({
-  history,
-  activeAddress,
-  collapsed,
-  open,
-  onToggle,
-  onNew,
-  onSelect,
-  onFocusComposer,
-  onHome,
-  replay = 0,
-}: SidebarProps) {
-  return (
-    <aside
-      className={[
-        "w-[260px] shrink-0 flex-col px-3 pt-3.5 pb-6",
-        open ? "fixed inset-y-0 left-0 z-20 flex bg-bg" : "hidden",
-        "min-[880px]:static min-[880px]:flex",
-        collapsed ? "min-[880px]:hidden" : "",
-      ].join(" ")}
-      aria-label="Navigation"
-    >
-      <div className="px-0.5 pb-5">
-        <TemporalMark onHome={onHome} replay={replay} />
-        <div className="mt-3 flex gap-0.5">
-          <button
-            className="grid size-8 place-items-center rounded-full text-muted hover:bg-hover hover:text-ink"
-            onClick={onFocusComposer}
-            type="button"
-            aria-label="Search"
-          >
-            <SearchIcon />
-          </button>
-          <button
-            className="grid size-8 place-items-center rounded-full text-muted hover:bg-hover hover:text-ink"
-            onClick={onToggle}
-            type="button"
-            aria-label="Toggle sidebar"
-          >
-            <PanelIcon />
-          </button>
-        </div>
-      </div>
-
-      <nav className="grid gap-1">
-        <button
-          className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm font-medium text-muted hover:bg-hover hover:text-ink"
-          onClick={onNew}
-          type="button"
-        >
-          <PlusIcon size={16} />
-          New place
-        </button>
-      </nav>
-
-      <div className="mt-7 min-h-0 overflow-auto">
-        <p className="mx-3 mb-2 text-xs font-medium text-dim">Opened</p>
-        {history.length === 0 ? (
-          <p className="mx-2.5 text-[0.82rem] text-dim">No places yet</p>
-        ) : (
-          <ul className="m-0 list-none p-0">
-            {history.map((item) => (
-              <li key={item}>
-                <button
-                  className={`block w-full truncate rounded-xl px-3 py-2 text-left text-[0.8125rem] hover:bg-hover hover:text-ink ${
-                    item === activeAddress ? "bg-elev text-ink" : "text-muted"
-                  }`}
-                  onClick={() => onSelect(item)}
-                  type="button"
-                >
-                  {item}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </aside>
-  );
-}
-
-const EXAMPLE_ADDRESS = "4600 Silver Hill Rd Washington DC 20233";
+const EXAMPLE_ADDRESS = "501 O'Farrell St San Francisco CA 94102";
 
 interface ComposerProps {
   address: string;
@@ -364,7 +253,6 @@ interface WorkspaceRailProps {
   view: WorkspaceView;
   sourceCount: number;
   onChange: (view: WorkspaceView) => void;
-  onHome: () => void;
 }
 
 const ITEMS: { id: WorkspaceView; label: string; icon: typeof GraphIcon }[] = [
@@ -374,31 +262,9 @@ const ITEMS: { id: WorkspaceView; label: string; icon: typeof GraphIcon }[] = [
   { id: "overview", label: "Overview", icon: BookIcon },
 ];
 
-export function HomeIcon({ size = 16 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M4 11.2 12 4l8 7.2V20a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 20v-8.8Z"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinejoin="round"
-      />
-      <path d="M9.5 21.5v-7h5v7" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-export function WorkspaceRail({ view, sourceCount, onChange, onHome }: WorkspaceRailProps) {
+export function WorkspaceRail({ view, sourceCount, onChange }: WorkspaceRailProps) {
   return (
     <aside className="hidden w-49 shrink-0 px-2.5 pt-4 pb-6 min-[880px]:block" aria-label="Workspace">
-      <button
-        className="mb-4 flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-left text-sm font-medium text-muted hover:bg-elev hover:text-ink"
-        onClick={onHome}
-        type="button"
-      >
-        <HomeIcon />
-        Home
-      </button>
       <p className="mx-2.5 mb-2.5 text-[0.68rem] font-medium tracking-[0.08em] text-dim uppercase">Workspace</p>
       <nav className="grid gap-0.5">
         {ITEMS.map((item) => {
