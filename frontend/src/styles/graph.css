@@ -1,0 +1,182 @@
+.g-field {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.g-field.is-panning {
+  cursor: grabbing;
+}
+
+.g-map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  transform: translate(var(--g-x), var(--g-y)) scale(var(--g-k));
+}
+
+.g-map svg {
+  display: block;
+  overflow: visible;
+}
+
+.g-edge {
+  fill: none;
+  stroke: var(--color-graph-line);
+  stroke-width: 1.2;
+  opacity: 0.88;
+}
+
+.g-edge.is-thought {
+  stroke-dasharray: 5 6;
+}
+
+.g-edge.is-cross {
+  stroke-dasharray: 2 7;
+  opacity: 0.42;
+}
+
+.g-edge.is-on {
+  stroke: var(--color-graph);
+  stroke-width: 1.6;
+  opacity: 1;
+}
+
+.g-node {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 13px 18px;
+  border: 1px solid var(--color-graph-line);
+  border-radius: 12px;
+  background: var(--color-graph-fill);
+  box-shadow: inset 3px 0 0 var(--color-graph);
+  cursor: pointer;
+}
+
+.g-node-place {
+  --color-graph: var(--color-place-line);
+  border-color: var(--color-place-line);
+  background: var(--color-place);
+}
+
+.g-node-gap {
+  --color-graph: #4a4a4a;
+  border-style: dashed;
+  box-shadow: inset 3px 0 0 #3a3a3a;
+  opacity: 0.78;
+}
+
+.g-node-think {
+  --color-graph: #4f7a5c;
+  border-style: dashed;
+  background: #0d1410;
+}
+
+.g-node-watch {
+  --color-graph: #8a4545;
+  border-color: #5a3030;
+  border-style: dashed;
+  background: #141010;
+  box-shadow: inset 3px 0 0 #8a4545;
+}
+
+.g-field.is-focused .g-node:not(.is-on) {
+  opacity: 0.46;
+}
+
+.g-node:hover,
+.g-node:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--color-graph-line) 40%, #fff);
+}
+
+.g-node-place:hover,
+.g-node-place:focus-visible,
+.g-node-place.is-on {
+  border-color: color-mix(in srgb, var(--color-place-line) 35%, #fff);
+}
+
+.g-node.is-on {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--color-graph) 45%, #fff);
+}
+
+.g-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.g-pct {
+  color: var(--color-graph);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.g-title {
+  margin: 0;
+  color: #f2f2f2;
+  font-size: 0.95rem;
+  font-weight: 550;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+.g-node-think .g-title,
+.g-node-watch .g-title {
+  font-size: 0.9rem;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.4;
+  color: #dedede;
+}
+
+.g-body {
+  margin: 0;
+  color: #c4c4c4;
+  font-size: 0.86rem;
+  line-height: 1.42;
+}
+
+.g-node-gap .g-title,
+.g-node-gap .g-body {
+  color: #9a9a9a;
+}
+
+.g-node-watch .g-kicker {
+  color: var(--color-danger);
+}
+
+.g-fit {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-elev);
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.g-fit:hover {
+  color: var(--color-ink);
+}

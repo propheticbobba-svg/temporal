@@ -1,6 +1,7 @@
 from datetime import UTC, datetime, timedelta
 
-from backend.place import RefreshInterval, get_registered_ingesters, is_refresh_due
+from backend.fetch import LocationInput
+from backend.place import RefreshInterval, get_registered_ingesters, is_refresh_due, source_covers
 
 
 def test_geocode_runs_first_and_never_refreshes() -> None:
@@ -32,6 +33,22 @@ def test_crime_nearby_registers_after_licenses_and_refreshes_weekly() -> None:
         "permits",
         "biz_licenses",
     ]
+
+
+def test_source_covers_crime_only_inside_san_francisco() -> None:
+    sf = LocationInput(
+        address="501 OFARRELL ST, SAN FRANCISCO, CA, 94102",
+        latitude=37.78573,
+        longitude=-122.41303,
+    )
+    chicago = LocationInput(
+        address="123 MAIN ST, CHICAGO, IL, 60601",
+        latitude=41.8781,
+        longitude=-87.6298,
+    )
+    assert source_covers("crime_nearby", sf) is True
+    assert source_covers("crime_nearby", chicago) is False
+    assert source_covers("geocode", sf) is False
 
 
 def test_refresh_is_due_when_never_ingested() -> None:

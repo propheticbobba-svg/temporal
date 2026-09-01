@@ -49,7 +49,7 @@ async def test_fetch_returns_standard_signal_envelope() -> None:
 
 
 @pytest.mark.asyncio
-async def test_fetch_flags_unusual_permit_values_as_anomalies() -> None:
+async def test_fetch_does_not_flag_high_valuation_as_an_anomaly() -> None:
     ingester = StubPermitsIngester(
         records=[
             PermitRecord(
@@ -59,6 +59,26 @@ async def test_fetch_flags_unusual_permit_values_as_anomalies() -> None:
                 description="Major demolition",
                 issued_at=datetime(2026, 2, 1, tzinfo=UTC),
                 valuation=750_000,
+            )
+        ]
+    )
+
+    signals = await ingester.fetch(LocationInput(address="100 Main St"))
+
+    assert signals[0].signal_type == "activity"
+    assert signals[0].is_anomaly is False
+
+
+@pytest.mark.asyncio
+async def test_fetch_flags_stop_work_permit_as_anomaly() -> None:
+    ingester = StubPermitsIngester(
+        records=[
+            PermitRecord(
+                permit_id="P-200",
+                status="Stop Work",
+                permit_type="Building",
+                description="Unsafe work",
+                issued_at=datetime(2026, 2, 1, tzinfo=UTC),
             )
         ]
     )

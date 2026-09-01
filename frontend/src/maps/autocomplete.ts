@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { loadGoogleMaps } from "./maps";
+import { loadGoogleMaps } from "./load";
 
 const DEBOUNCE_MS = 250;
 const MIN_CHARS = 3;

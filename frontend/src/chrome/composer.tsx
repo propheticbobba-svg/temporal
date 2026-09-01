@@ -1,54 +1,14 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 
-import { useAddressAutocomplete, type AddressSuggestion } from "./addressAutocomplete";
-import type { WorkspaceView } from "./query";
+import { useAddressAutocomplete, type AddressSuggestion } from "../maps/autocomplete";
 
-const MARK = {
-  word: "TEMPORAL",
-  delay: 78,
-  fuse: ["#22d3ee", "#38bdf8", "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef", "#f472b6"],
-} as const;
-
-export function TemporalMark({
-  onHome,
-  replay = 0,
-}: {
-  onHome: () => void;
-  replay?: number;
-}) {
-  return (
-    <button
-      key={replay}
-      className="block border-0 bg-transparent px-1 py-0.5"
-      onClick={onHome}
-      type="button"
-      aria-label="Home"
-    >
-      <span className="mark">
-        {MARK.word.split("").map((letter, index) => (
-          <span
-            key={`${letter}-${index}`}
-            className="mark-letter"
-            style={
-              {
-                animationDelay: `${index * MARK.delay}ms`,
-                "--fuse": MARK.fuse[index],
-              } as CSSProperties
-            }
-          >
-            {letter}
-          </span>
-        ))}
-      </span>
-    </button>
-  );
-}
+const EXAMPLE_ADDRESS = "501 O'Farrell St San Francisco CA 94102";
 
 interface IconProps {
   size?: number;
 }
 
-export function SearchIcon({ size = 18 }: IconProps) {
+function SearchIcon({ size = 18 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.6" />
@@ -57,7 +17,7 @@ export function SearchIcon({ size = 18 }: IconProps) {
   );
 }
 
-export function ArrowUpIcon({ size = 16 }: IconProps) {
+function ArrowUpIcon({ size = 16 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
@@ -70,46 +30,6 @@ export function ArrowUpIcon({ size = 16 }: IconProps) {
     </svg>
   );
 }
-
-export function GraphIcon({ size = 16 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="5" r="2.2" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="6" cy="18" r="2.2" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="18" cy="18" r="2.2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M11 7L7 16M13 7l4 9" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
-export function GlobeIcon({ size = 16 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M4 12h16M12 4c2.5 2.8 3.8 5.8 3.8 8S14.5 17.2 12 20C9.5 17.2 8.2 14.2 8.2 12S9.5 6.8 12 4Z" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
-export function BookIcon({ size = 16 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21.5V5.5Z" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M5 18h12" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
-export function TableIcon({ size = 16 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M4 10h16M10 5v14" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
-const EXAMPLE_ADDRESS = "501 O'Farrell St San Francisco CA 94102";
 
 interface ComposerProps {
   address: string;
@@ -141,10 +61,10 @@ export function Composer({
   const showList = listOpen && suggestions.length > 0;
 
   useEffect(() => {
-    if (!docked) {
+    if (!docked && !isLoading) {
       inputRef.current?.focus();
     }
-  }, [docked]);
+  }, [docked, isLoading]);
 
   useEffect(() => {
     if (!address.trim()) {
@@ -225,6 +145,15 @@ export function Composer({
     if (event.key === "Enter" && showList && highlight >= 0 && suggestions[highlight]) {
       event.preventDefault();
       fill(suggestions[highlight]);
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      setListOpen(false);
+      setHighlight(-1);
+      if (!isLoading && address.trim()) {
+        event.currentTarget.form?.requestSubmit();
+      }
     }
   }
 
@@ -261,6 +190,7 @@ export function Composer({
             type="text"
             value={address}
             autoComplete="off"
+            disabled={isLoading}
           />
           <button
             className="grid size-9 shrink-0 place-items-center rounded-full bg-white text-bg disabled:bg-hover disabled:text-dim"
@@ -311,13 +241,17 @@ export function Composer({
           {error}
         </p>
       ) : isLoading ? (
-        <p className="mt-2.5 px-4 text-center text-[0.82rem] text-muted" aria-live="polite">
-          Reading the environment
-        </p>
+        <ThinkBeat />
       ) : !docked ? (
         <button
           className="mx-auto mt-3 block border-0 bg-transparent text-xs text-dim hover:text-muted"
-          onClick={() => onAddressChange(EXAMPLE_ADDRESS)}
+          onClick={() => {
+            setListOpen(false);
+            setHighlight(-1);
+            collectedQuery.current = null;
+            onAddressChange(EXAMPLE_ADDRESS);
+            inputRef.current?.focus();
+          }}
           type="button"
         >
           Try an example
@@ -327,98 +261,22 @@ export function Composer({
   );
 }
 
-const THINK_COLS = 48;
-const THINK_ROWS = 16;
-const THINK_WAVE_MS = 6800;
+const THINK_BEATS = ["Reading the pin", "Opening public records", "Fusing the trails"] as const;
 
-function thinkStop(row: number) {
-  const t = row / Math.max(1, THINK_ROWS - 1);
-  return {
-    fuse: dimRgb(mixFuse(t), 0.5 - t * 0.26),
-    peak: (0.34 - t * 0.14).toFixed(3),
-  };
-}
+function ThinkBeat() {
+  const [index, setIndex] = useState(0);
 
-function mixFuse(t: number): string {
-  const stops = MARK.fuse.length - 1;
-  const x = Math.min(1, Math.max(0, t)) * stops;
-  const index = Math.min(stops - 1, Math.floor(x));
-  const frac = x - index;
-  const from = hexRgb(MARK.fuse[index]);
-  const to = hexRgb(MARK.fuse[index + 1]);
-  return `rgb(${from.map((value, channel) => Math.round(value + (to[channel] - value) * frac)).join(",")})`;
-}
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setIndex((current) => current + 1);
+    }, 700);
+    return () => window.clearInterval(timer);
+  }, []);
 
-function dimRgb(rgb: string, amount: number): string {
-  const values = rgb.match(/\d+/g)?.map(Number) ?? [128, 128, 128];
-  return `rgb(${values.map((value) => Math.round(value * amount + 28 * (1 - amount))).join(",")})`;
-}
-
-function hexRgb(hex: string): [number, number, number] {
-  return [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16)) as [number, number, number];
-}
-
-export function ThinkField() {
+  const line = THINK_BEATS[index % THINK_BEATS.length];
   return (
-    <div className="think-field" aria-hidden>
-      {Array.from({ length: THINK_COLS * THINK_ROWS }, (_, index) => {
-        const column = index % THINK_COLS;
-        const row = Math.floor(index / THINK_COLS);
-        const stop = thinkStop(row);
-        return (
-          <i
-            key={index}
-            style={
-              {
-                animationDelay: `${row * 200 + column * 3 - THINK_WAVE_MS}ms`,
-                "--fuse": stop.fuse,
-                "--peak": stop.peak,
-              } as CSSProperties
-            }
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-interface WorkspaceRailProps {
-  view: WorkspaceView;
-  sourceCount: number;
-  onChange: (view: WorkspaceView) => void;
-}
-
-const ITEMS: { id: WorkspaceView; label: string; icon: typeof GraphIcon }[] = [
-  { id: "graph", label: "Graph", icon: GraphIcon },
-  { id: "sources", label: "Sources", icon: GlobeIcon },
-  { id: "table", label: "Table", icon: TableIcon },
-  { id: "overview", label: "Overview", icon: BookIcon },
-];
-
-export function WorkspaceRail({ view, sourceCount, onChange }: WorkspaceRailProps) {
-  return (
-    <aside className="hidden w-49 shrink-0 px-2.5 pt-4 pb-6 min-[880px]:block" aria-label="Workspace">
-      <p className="mx-2.5 mb-2.5 text-[0.68rem] font-medium tracking-[0.08em] text-dim uppercase">Workspace</p>
-      <nav className="grid gap-0.5">
-        {ITEMS.map((item) => {
-          const Icon = item.icon;
-          const active = view === item.id;
-          return (
-            <button
-              key={item.id}
-              className={`grid grid-cols-[16px_1fr_auto] items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-left text-sm font-medium ${
-                active ? "bg-elev text-ink" : "text-muted hover:bg-elev hover:text-ink"
-              }`}
-              onClick={() => onChange(item.id)}
-              type="button"
-            >
-              <Icon />
-              <span>{item.label}</span>
-              {item.id === "sources" ? <em className="text-xs not-italic text-dim">{sourceCount}</em> : null}
-            </button>
-          );
-        })}
-      </nav>
-    </aside>
+    <p key={line} className="think-beat mt-2.5 px-4 text-center text-[0.82rem] text-muted" aria-live="polite">
+      {line}
+    </p>
   );
 }

@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from backend.app import app, get_signal_ingesters
+from backend.brief import Brief, BriefModule, CategoryBrief, PlaceGraph
 from backend.fetch import BaseIngester, BizLicensesIngester, LocationInput, SignalCreate
-from backend.store import Base, Location, get_session
+from backend.store import Base, BriefSnapshot, Location, SourceWatermark, get_session
 
 
 class StubBizLicensesIngester(BaseIngester):
@@ -169,3 +170,120 @@ def test_post_brief_serves_materialized_snapshot_when_sources_are_fresh() -> Non
         "signals"
     ]
     assert second.json()["narrative"]
+
+
+class StubCrimeNearbyIngester(BaseIngester):
+    source = "crime_nearby"
+
+    def __init__(self) -> None:
+        self.fetch_calls = 0
+
+    async def fetch(self, location: LocationInput) -> list[SignalCreate]:
+        self.fetch_calls += 1
+        return [
+            SignalCreate(
+                source=self.source,
+                signal_type="trend",
+                observed_at=datetime(2026, 8, 31, tzinfo=UTC),
+                value={
+                    "burglary": 5,
+                    "vehicle": 8,
+                    "robbery": 2,
+                    "vandalism": 5,
+                    "total_incidents": 20,
+                    "radius_meters": 400,
+                    "window_days": 365,
+                },
+                summary="20 incidents within 400m in the last 12 months.",
+                is_anomaly=False,
+                confidence=1.0,
+            )
+        ]
+
+
+def test_post_brief_rebuilds_when_snapshot_is_missing_a_live_trail() -> None:
+    licenses = StubBizLicensesIngester()
+    crime = StubCrimeNearbyIngester()
+    client, session_factory = build_test_client()
+    app.dependency_overrides[get_signal_ingesters] = lambda: (licenses, crime)
+    address = "501 OFARRELL ST, SAN FRANCISCO, CA, 94102"
+    empty = CategoryBrief()
+    try:
+        with session_factory() as session:
+            location = Location(address=address, latitude=37.78573, longitude=-122.41303)
+            session.add(location)
+            session.flush()
+            session.add(
+                SourceWatermark(
+                    location_id=location.id,
+                    source="crime_nearby",
+                    refreshed_at=datetime(2026, 8, 31, tzinfo=UTC),
+                )
+            )
+            session.add(
+                BriefSnapshot(
+                    location_id=location.id,
+                    generated_at=datetime(2026, 8, 31, tzinfo=UTC),
+                    payload=Brief(
+                        address=address,
+                        generated_at=datetime(2026, 8, 31, tzinfo=UTC),
+                        narrative="Commercial.",
+                        place_class="commercial",
+                        place_class_label="Commercial",
+                        place_class_assumed=False,
+                        modules=[
+                            BriefModule(
+                                id="tenancy",
+                                title="Tenure",
+                                question="Tenure?",
+                                trail="Tenure.",
+                                status="uncovered",
+                                summary="No assessor feed.",
+                            ),
+                            BriefModule(
+                                id="business_activity",
+                                title="Who operated here",
+                                question="Who operated?",
+                                trail="Licenses.",
+                                status="empty",
+                                summary="No operator on file.",
+                            ),
+                            BriefModule(
+                                id="inspections",
+                                title="Inspections",
+                                question="Inspections?",
+                                trail="Inspections.",
+                                status="uncovered",
+                                summary="No inspection feed.",
+                            ),
+                            BriefModule(
+                                id="site_work",
+                                title="Site work",
+                                question="Site work?",
+                                trail="Permits.",
+                                status="uncovered",
+                                summary="No permit portal.",
+                            ),
+                        ],
+                        graph=PlaceGraph(place_id="place", place_label=address),
+                        physical_condition=empty,
+                        regulatory_standing=empty,
+                        operational_activity=empty,
+                        environmental_context=empty,
+                    ).model_dump(mode="json"),
+                )
+            )
+            session.commit()
+
+        response = client.post("/brief", json={"address": address})
+    finally:
+        client.close()
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    data = response.json()
+    assert crime.fetch_calls == 1
+    nearby = next(module for module in data["modules"] if module["id"] == "neighborhood")
+    assert nearby["status"] == "answered"
+    assert {entity["kind"] for entity in data["graph"]["entities"]} >= {"context"}
+    assert any(edge["capability"] == "neighborhood" for edge in data["graph"]["edges"])

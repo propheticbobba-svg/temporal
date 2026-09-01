@@ -45,6 +45,7 @@ def test_build_brief_returns_null_scores_for_empty_categories() -> None:
         "tenancy",
         "house_work",
         "household_services",
+        "neighborhood",
     }
     house_work = next(module for module in brief.modules if module.id == "house_work")
     assert house_work.status == "answered"

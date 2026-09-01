@@ -155,21 +155,21 @@ async def test_fetch_returns_empty_list_outside_san_francisco() -> None:
 
 
 @pytest.mark.asyncio
-async def test_fetch_returns_empty_list_when_intersections_are_thin() -> None:
-    ingester = StubCrimeNearbyIngester(row=make_row(distinct_intersections=5))
+async def test_fetch_keeps_thin_counts_on_the_graph() -> None:
+    ingester = StubCrimeNearbyIngester(row=make_row(total_incidents=4, distinct_intersections=3))
 
     signals = await ingester.fetch(sf_location())
 
-    assert signals == []
+    assert len(signals) == 1
+    assert signals[0].value["total_incidents"] == 4
 
 
 @pytest.mark.asyncio
-async def test_fetch_returns_empty_list_when_api_is_unreachable() -> None:
+async def test_fetch_raises_when_api_is_unreachable() -> None:
     ingester = StubCrimeNearbyIngester(error=httpx.ConnectError("unreachable"))
 
-    signals = await ingester.fetch(sf_location())
-
-    assert signals == []
+    with pytest.raises(httpx.ConnectError):
+        await ingester.fetch(sf_location())
 
 
 @pytest.mark.asyncio

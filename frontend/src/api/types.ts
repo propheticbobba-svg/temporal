@@ -4,7 +4,7 @@ export type PlaceClass = "residential" | "commercial" | "industrial" | "mixed";
 
 export type ModuleStatus = "answered" | "empty" | "uncovered";
 
-export type EntityKind = "person" | "business" | "contractor" | "work";
+export type EntityKind = "person" | "business" | "contractor" | "work" | "context";
 
 export type EdgeRel =
   | "LIVED_AT"
@@ -14,7 +14,8 @@ export type EdgeRel =
   | "LICENSED"
   | "WORKED_ON"
   | "SERVICED"
-  | "INSPECTED";
+  | "INSPECTED"
+  | "NEARBY";
 
 export interface Signal {
   source: string;
@@ -70,6 +71,68 @@ export interface PlaceGraph {
   edges: GraphEdge[];
 }
 
+export interface GraphBeat {
+  edge_id: string;
+  when: string;
+  line: string;
+}
+
+export interface GraphTrailFusion {
+  module_id: string;
+  headline: string;
+  beats: GraphBeat[];
+}
+
+export interface GraphPlan {
+  expand: string[];
+  tight: string[];
+  lead?: string | null;
+}
+
+export interface GraphGap {
+  module_id: string;
+  why: string;
+}
+
+export interface GraphBridge {
+  from_id: string;
+  to_id: string;
+  why: string;
+  confidence: number;
+  edge_ids: string[];
+}
+
+export type ThoughtKind = "link" | "watch";
+
+export interface GraphThought {
+  kind: ThoughtKind;
+  line: string;
+  from_id: string;
+  to_id: string;
+  also_ids?: string[];
+  edge_ids: string[];
+}
+
+export interface SourceNote {
+  origin: string;
+  proved: string;
+  when: string;
+  edge_id: string;
+}
+
+export interface GraphFusion {
+  place_read: string;
+  trails: GraphTrailFusion[];
+  model: string;
+  plan?: GraphPlan | null;
+  sources_read?: string;
+  sources?: SourceNote[];
+  gaps?: GraphGap[];
+  bridges?: GraphBridge[];
+  thoughts?: GraphThought[];
+  anomalies?: string[];
+}
+
 export interface Brief {
   address: string;
   generated_at: string;
@@ -88,6 +151,7 @@ export interface Brief {
   environmental_context: CategoryBrief;
   business_license_source_count: number;
   business_license_coverage_note: string | null;
+  fusion?: GraphFusion | null;
 }
 
 export interface Location {
@@ -101,16 +165,5 @@ export interface Location {
 export const STATUS_LABEL: Record<ModuleStatus, string> = {
   answered: "On record",
   empty: "None on file",
-  uncovered: "Not covered",
-};
-
-export const REL_LABEL: Record<EdgeRel, string> = {
-  LIVED_AT: "lived here",
-  TENANT_OF: "tenant",
-  OWNED_BY: "owned",
-  OPERATED_AT: "operated",
-  LICENSED: "licensed",
-  WORKED_ON: "worked on",
-  SERVICED: "serviced",
-  INSPECTED: "inspected",
+  uncovered: "Unwired",
 };
