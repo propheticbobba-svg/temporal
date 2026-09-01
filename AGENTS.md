@@ -1,18 +1,9 @@
 # Agent notes
 
-## GitHub auth
+This is a public repository. Treat every commit as world-readable.
 
-All `git` / `gh` auth for this repo uses the isolated bot config at
-`~/.config/gh-warden-bot` (`GH_CONFIG_DIR`). See
-`.cursor/rules/github-pr-auth.mdc`.
-
-Do not use personal GitHub login, SSH keys, or macOS Keychain. Do not commit
-or print that config directory.
-
-## GCP auth
-
-Use Application Default Credentials for project
-`project-1ed4b477-d344-46ba-a89`. See `.cursor/rules/gcp-auth.mdc`.
-
-Do not export service account keys or disable
-`iam.disableServiceAccountKeyCreation`.
+- Never commit `.env`, credentials, tokens, API keys, or cloud project identifiers.
+- Read secrets from the environment. `.env.example` lists names only.
+- Optional graph fusion uses Application Default Credentials. Do not export service-account JSON keys. Do not disable `iam.disableServiceAccountKeyCreation`.
+- Vertex stays off unless `GRAPH_AI=true` and `VERTEX_PROJECT` are set in the local environment.
+- Do not print, paste, or rewrite secrets into source, tests, or docs.

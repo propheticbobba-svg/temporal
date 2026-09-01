@@ -56,7 +56,7 @@ Add a city license source as a JSON row in `backend/catalog/`. Uncovered trails 
 - **API:** Python 3.11, FastAPI, SQLAlchemy (PostgreSQL locally, SQLite on the Hobby Vercel deploy)
 - **UI:** TypeScript, React, Vite, TanStack Query, Tailwind
 - **Ingest:** httpx against public APIs
-- **Optional AI:** Vertex DeepSeek via Application Default Credentials (`gcloud auth login --update-adc`). There is no DeepSeek API key. Set `GRAPH_AI=false` for the deterministic graph only.
+- **Optional AI:** Vertex, via Application Default Credentials (`gcloud auth login --update-adc`). There is no model API key. Fusion stays off unless `GRAPH_AI=true` and `VERTEX_PROJECT` are set.
 
 ## Layout
 
@@ -77,7 +77,9 @@ Add a city license source as a JSON row in `backend/catalog/`. Uncovered trails 
 
 ## Local development
 
-Copy `.env.example` to `.env` at the repo root. Set `VITE_GOOGLE_MAPS_API_KEY` if you want Street View and address autocomplete. Backend settings and Vite both read that file.
+Copy `.env.example` to `.env` at the repo root. Fill only what you need on your machine. Never commit `.env`.
+
+Set `VITE_GOOGLE_MAPS_API_KEY` if you want Street View and address autocomplete, and restrict that key in Google Cloud to your hosts. Backend settings and Vite both read `.env`.
 
 Two processes: API + Postgres via Docker Compose, and the Vite frontend.
 
@@ -95,7 +97,11 @@ make lint
 
 ## Deploy
 
-The Hobby demo is a single Vercel project: FastAPI serves the built UI. On Vercel the database is ephemeral SQLite (`/tmp`), so a cold start fetches public records again. Vertex is off there unless you attach GCP credentials.
+The Hobby demo is a single Vercel project: FastAPI serves the built UI. On Vercel the database is ephemeral SQLite (`/tmp`), so a cold start fetches public records again. Vertex stays off unless you set the Vertex env vars on the host.
+
+## Secrets
+
+Nothing in this tree is a live credential. Cloud project ids, API keys, and tokens belong in the environment (or a secrets manager), not in source. Agent auth notes under `.cursor/` are local and gitignored.
 
 ```sh
 vercel deploy --prod

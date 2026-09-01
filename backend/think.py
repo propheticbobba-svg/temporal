@@ -37,7 +37,8 @@ async def attach_fusion(brief: Brief) -> Brief:
     if brief.fusion is not None:
         fusion = _with_sources(brief, brief.fusion)
         return _with_flags(brief, fusion)
-    if not get_settings().graph_ai or not worth_fusing(brief):
+    settings = get_settings()
+    if not settings.graph_ai or not settings.vertex_project or not worth_fusing(brief):
         return _with_flags(brief, _local_fusion(brief))
     raw = await complete_fusion(brief)
     if raw is None:
@@ -101,6 +102,8 @@ def _with_sources(brief: Brief, fusion: GraphFusion) -> GraphFusion:
 
 async def complete_fusion(brief: Brief) -> GraphFusion | None:
     settings = get_settings()
+    if not settings.vertex_project or not settings.vertex_model:
+        return None
     url = (
         f"https://aiplatform.googleapis.com/v1/projects/{settings.vertex_project}"
         f"/locations/{settings.vertex_location}/endpoints/openapi/chat/completions"
