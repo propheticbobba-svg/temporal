@@ -48,6 +48,39 @@ def test_permit_and_license_stay_related_through_the_place() -> None:
     )
 
 
+def test_crime_becomes_neighborhood_slices() -> None:
+    graph = build_place_graph(
+        "1 DR CARLTON B GOODLETT PL",
+        "residential",
+        [
+            SignalRead(
+                source="crime_nearby",
+                signal_type="trend",
+                observed_at=datetime(2026, 8, 31, tzinfo=UTC),
+                value={
+                    "burglary": 5,
+                    "vehicle": 8,
+                    "robbery": 0,
+                    "vandalism": 3,
+                    "total_incidents": 16,
+                    "radius_meters": 400,
+                    "window_days": 365,
+                },
+                summary="16 incidents within 400m in the last 12 months.",
+                is_anomaly=False,
+                confidence=1.0,
+            )
+        ],
+    )
+
+    labels = {entity.label for entity in graph.entities}
+    assert labels == {"Nearby incidents", "Burglary", "Vehicle theft", "Vandalism"}
+    assert all(edge.rel == "NEARBY" for edge in graph.edges)
+    assert {edge.origin for edge in graph.edges} == {"SFPD incidents"}
+    burglary = next(edge for edge in graph.edges if "burglary" in edge.id)
+    assert burglary.summary.startswith("5 burglary")
+
+
 def _license(name: str, license_type: str) -> SignalRead:
     return SignalRead(
         source="biz_licenses",

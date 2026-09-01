@@ -119,6 +119,23 @@
     ]
   },
   {
+    "id": "neighborhood",
+    "title": "Around the block",
+    "question": "What has happened nearby?",
+    "trail": "Public incidents and trends in walking distance of the pin.",
+    "place_classes": ["residential", "commercial", "industrial", "mixed"],
+    "edge_types": ["NEARBY"],
+    "uncovered_copy": "Nearby crime is wired for San Francisco (SFPD open data). This pin is outside that cover, so we are not guessing a neighborhood score.",
+    "empty_copy": "SFPD incidents in the last 12 months did not match around this pin.",
+    "providers": [
+      {
+        "id": "sfpd_incidents",
+        "status": "live",
+        "covers": { "kind": "crime_nearby" }
+      }
+    ]
+  },
+  {
     "id": "industrial_activity",
     "title": "Industrial activity",
     "question": "What industrial work happens here?",

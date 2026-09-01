@@ -22,6 +22,7 @@ from .fetch import (
     LocationInput,
     PermitsIngester,
     SignalCreate,
+    in_san_francisco,
     is_compact_address,
 )
 from .store import Location, Signal, encode_place_key, get_settings
@@ -30,7 +31,13 @@ logger = logging.getLogger(__name__)
 
 PlaceClass: TypeAlias = Literal["residential", "commercial", "industrial", "mixed"]
 ProviderStatus: TypeAlias = Literal["live", "planned"]
-CoverKind: TypeAlias = Literal["never", "always", "license_registry", "permits_configured"]
+CoverKind: TypeAlias = Literal[
+    "never",
+    "always",
+    "license_registry",
+    "permits_configured",
+    "crime_nearby",
+]
 
 PLACE_CLASSES: tuple[PlaceClass, ...] = (
     "residential",
@@ -102,6 +109,8 @@ def provider_covers(provider: ProviderSpec, location: LocationInput) -> bool:
         return get_settings().permits_api_url is not None
     if kind == "license_registry":
         return _license_registry_covers(location)
+    if kind == "crime_nearby":
+        return _crime_nearby_covers(location)
     return False
 
 
@@ -112,6 +121,22 @@ def _license_ingester() -> BizLicensesIngester:
 
 def _license_registry_covers(location: LocationInput) -> bool:
     return bool(_license_ingester().matching_sources(location))
+
+
+def _crime_nearby_covers(location: LocationInput) -> bool:
+    if location.latitude is None or location.longitude is None:
+        return False
+    return in_san_francisco(location.latitude, location.longitude)
+
+
+def source_covers(source: str, location: LocationInput) -> bool:
+    if source == "crime_nearby":
+        return _crime_nearby_covers(location)
+    if source == "biz_licenses":
+        return _license_registry_covers(location)
+    if source == "permits":
+        return get_settings().permits_api_url is not None
+    return False
 
 
 class RefreshInterval(StrEnum):

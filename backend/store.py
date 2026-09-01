@@ -65,6 +65,10 @@ class Settings(BaseSettings):
     socrata_app_token: str | None = Field(default=None)
     socrata_host: str = Field(default="data.sf.gov")
     socrata_api_version: str = Field(default="v2")
+    graph_ai: bool = Field(default=True)
+    vertex_project: str = Field(default="project-1ed4b477-d344-46ba-a89")
+    vertex_location: str = Field(default="global")
+    vertex_model: str = Field(default="deepseek-ai/deepseek-v3.2-maas")
 
 
 @lru_cache

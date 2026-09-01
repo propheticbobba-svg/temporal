@@ -1,7 +1,7 @@
 import { QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { buildWorkspaceGraph, searchSources, sourceCards, sourceCategories } from "./graph";
+import { buildWorkspaceGraph } from "../graph";
 import type { Brief, Location } from "./types";
 
 export const queryClient = new QueryClient({
@@ -34,12 +34,7 @@ export interface Place {
   brief: Brief;
 }
 
-export interface SourceFilter {
-  query: string;
-  category: string | null;
-}
-
-export type WorkspaceView = "graph" | "sources" | "table" | "overview";
+export type WorkspaceView = "graph" | "overview";
 
 export async function fetchPlace(address: string): Promise<Place> {
   const location = await postJson<Location>("/location", { address });
@@ -73,25 +68,10 @@ export function usePlaceGraph(address: string | null) {
   });
 }
 
-export function usePlaceSources(address: string | null, filter: SourceFilter) {
-  return useQuery({
-    queryKey: keys.place(address ?? ""),
-    queryFn: () => fetchPlace(address!),
-    enabled: Boolean(address),
-    select: (place) => {
-      const cards = sourceCards(place.brief);
-      return {
-        cards: searchSources(cards, filter.query, filter.category),
-        total: cards.length,
-        categories: sourceCategories(cards),
-      };
-    },
-  });
-}
-
 export function usePlaceSession() {
   const [draft, setDraft] = useState("");
   const [address, setAddress] = useState<string | null>(null);
+  const [ticket, setTicket] = useState(0);
   const place = usePlaceQuery(address);
 
   const open = useCallback((value: string) => {
@@ -99,46 +79,87 @@ export function usePlaceSession() {
     if (!trimmed) {
       return;
     }
+    setDraft(trimmed);
     setAddress(trimmed);
+    setTicket((count) => count + 1);
   }, []);
+
+  useEffect(() => {
+    if (ticket === 0 || !place.isError) {
+      return;
+    }
+    void place.refetch();
+  }, [place.isError, place.refetch, ticket]);
 
   const reset = useCallback(() => {
     setAddress(null);
     setDraft("");
+    setTicket(0);
   }, []);
 
   return {
     draft,
     setDraft,
     address: place.data?.location.address ?? address,
+    ticket,
     open,
     reset,
     place: place.data,
-    isLoading: place.isLoading,
+    isLoading: place.isLoading || place.isFetching,
     error: place.isError ? errorMessage(place.error) : null,
   };
 }
 
+const REVEAL_MS = 700;
+
+export function useReveal(ticket: number, dataReady: boolean, failed: boolean): "home" | "thinking" | "ready" {
+  const [stage, setStage] = useState<"home" | "thinking" | "ready">("home");
+  const [armed, setArmed] = useState(0);
+  const begun = useRef(0);
+
+  useEffect(() => {
+    begun.current = ticket === 0 ? 0 : Date.now();
+  }, [ticket]);
+
+  useEffect(() => {
+    setArmed(ticket);
+    if (ticket === 0) {
+      setStage("home");
+      return;
+    }
+    setStage("thinking");
+    if (failed) {
+      setStage("home");
+      return;
+    }
+    if (!dataReady) {
+      return;
+    }
+    const wait = Math.max(0, REVEAL_MS - (Date.now() - begun.current));
+    const timer = window.setTimeout(() => setStage("ready"), wait);
+    return () => window.clearTimeout(timer);
+  }, [dataReady, failed, ticket]);
+
+  if (ticket === 0 || failed) {
+    return "home";
+  }
+  if (armed === ticket && stage === "ready" && dataReady) {
+    return "ready";
+  }
+  return "thinking";
+}
+
 export function useWorkspace(address: string | undefined) {
   const [view, setView] = useState<WorkspaceView>("graph");
-  const [sourceFocus, setSourceFocus] = useState<string | null>(null);
 
   useEffect(() => {
     setView("graph");
-    setSourceFocus(null);
   }, [address]);
 
   return {
     view,
-    sourceFocus,
-    openSources: (focus?: string) => {
-      setSourceFocus(focus ?? null);
-      setView("sources");
-    },
-    changeView: (next: WorkspaceView) => {
-      setSourceFocus(null);
-      setView(next);
-    },
+    openOverview: () => setView("overview"),
+    changeView: setView,
   };
 }
 

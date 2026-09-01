@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { AUTH_FAILURE_EVENT, loadGoogleMaps } from "./maps";
-import type { Location } from "./types";
+import { AUTH_FAILURE_EVENT, loadGoogleMaps } from "./load";
+import type { Location } from "../api/types";
 
 const SEARCH_RADIUS_METERS = 50;
 const INITIAL_PITCH = -5;

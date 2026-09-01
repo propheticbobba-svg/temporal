@@ -19,13 +19,17 @@ on every click.
 | Path | Role |
 |---|---|
 | `backend/app.py` | HTTP door |
-| `backend/fetch.py` | Talk to the world: geocode, licenses, permits |
+| `backend/fetch/` | Talk to the world: geocode, licenses, permits, crime |
 | `backend/place.py` | Identify a place, persist signals, decide what is stale |
-| `backend/brief.py` | Classify, graph, modules, snapshot |
+| `backend/brief/` | Classify, graph, modules, snapshot |
+| `backend/think.py` | Vertex copy fused onto existing ids |
 | `backend/store.py` | Settings, models, indexed place key |
 | `backend/catalog/` | Capability questions and license-source registry |
-| `frontend/` | TanStack Query client |
-| `tests/` | API and unit checks |
+| `frontend/src/api/` | Query client and brief types |
+| `frontend/src/chrome/` | Mark, search, thinking orb, rail |
+| `frontend/src/graph/` | Workspace graph build, layout, canvas |
+| `frontend/src/maps/` | Autocomplete and Street View |
+| `tests/` | Checks nested by area (`fetch`, `brief`, `place`, `think`) |
 
 One path: address → `fetch` → `place` → `brief` → Query cache → graph.
 
@@ -36,6 +40,10 @@ stay visible; we do not invent occupants.
 
 Copy `.env.example` to `.env` at the repo root. Set `VITE_GOOGLE_MAPS_API_KEY`
 if you want Street View. Backend settings and Vite both read that file.
+
+Graph copy on the workspace is fused through Vertex DeepSeek using Application
+Default Credentials (`gcloud auth login --update-adc`). There is no DeepSeek
+API key. Set `GRAPH_AI=false` to keep the deterministic graph only.
 
 Two processes: API + Postgres via Docker Compose, and the Vite frontend.
 
