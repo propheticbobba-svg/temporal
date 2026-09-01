@@ -1,0 +1,9 @@
+.venv
+.cursor
+.cache
+tests
+frontend/node_modules
+*.db
+.env
+*.egg-info
+__pycache__

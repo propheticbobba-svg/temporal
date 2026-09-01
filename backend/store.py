@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 from collections.abc import Iterator
 from datetime import datetime
@@ -57,15 +58,25 @@ _SKIP = frozenset({"UNITED", "STATES", "TOWNSHIP", "COUNTY", "DISTRICT"})
 _NON_ALNUM = re.compile(r"[^A-Z0-9]+")
 
 
+def _default_database_url() -> str:
+    if os.environ.get("VERCEL"):
+        return "sqlite:////tmp/temporal_proj.db"
+    return "sqlite:///./temporal_proj.db"
+
+
+def _default_graph_ai() -> bool:
+    return os.environ.get("VERCEL") is None
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = Field(default="sqlite:///./temporal_proj.db")
+    database_url: str = Field(default_factory=_default_database_url)
     permits_api_url: str | None = Field(default=None)
     socrata_app_token: str | None = Field(default=None)
     socrata_host: str = Field(default="data.sf.gov")
     socrata_api_version: str = Field(default="v2")
-    graph_ai: bool = Field(default=True)
+    graph_ai: bool = Field(default_factory=_default_graph_ai)
     vertex_project: str = Field(default="project-1ed4b477-d344-46ba-a89")
     vertex_location: str = Field(default="global")
     vertex_model: str = Field(default="deepseek-ai/deepseek-v3.2-maas")
