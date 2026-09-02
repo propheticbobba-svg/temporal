@@ -7,6 +7,12 @@ __pycache__/
 .cache/
 *.egg-info/
 .env
+.env.*
+!.env.example
+*.pem
+*.p12
+*credentials*.json
+*service-account*.json
 *.db
 node_modules/
 frontend/dist/
