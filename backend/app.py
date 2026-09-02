@@ -13,8 +13,6 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -117,14 +115,7 @@ async def create_brief(
     return await load_brief(session, request, ingesters)
 
 
+# Literal path so Vercel can promote the Vite build to the CDN.
+# Hashed JS/CSS stay immutable; HTML must not be cached across deploys.
 if FRONTEND_DIST.exists():
-    assets = FRONTEND_DIST / "assets"
-    if assets.exists():
-        app.mount("/assets", StaticFiles(directory=assets), name="assets")
-
-    @app.get("/{full_path:path}")
-    def spa(full_path: str) -> FileResponse:
-        candidate = FRONTEND_DIST / full_path
-        if candidate.is_file():
-            return FileResponse(candidate)
-        return FileResponse(FRONTEND_DIST / "index.html")
+    app.frontend("/", directory="frontend/dist")
